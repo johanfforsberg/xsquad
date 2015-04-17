@@ -1,0 +1,4 @@
+cython
+gevent >= 1.0
+flask
+flask-wtf

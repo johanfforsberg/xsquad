@@ -1,0 +1,42 @@
+<html>
+<head>
+
+<link rel="stylesheet" type="text/css" href='static/css/game_list.css' />
+
+</head>
+<body>
+
+<a href="/games/new">Start a new game</a>
+
+<div id="header">
+  {{ username }} |
+  <a href="/?user={{ username }}">My games</a> |
+  <a href="/">All games</a> |
+  <a href="/logout">Logout<a>
+</div>
+
+<div id="gameListWrap">
+
+{% if username %}
+    <h3>Ongoing games where '{{ username }}' is playing:</h3>
+{% else %}
+    <h3>Ongoing games:</h3>
+{% endif %}
+<ul>
+  {% for gid, game in games.iteritems() %}
+  <li>
+    {{ "%s: " % gid }}
+    <a href="{{ '/games/%s' % gid }}">
+{% if game.waiting %}
+    {{ "%s is waiting for an opponent." % game.players[0] }}
+{% else %}
+    {{ "%s vs %s" % (game.players[0], game.players[1]) }}
+{% endif %}
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+</div>
+
+</body>
+</html>
