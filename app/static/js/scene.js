@@ -175,69 +175,17 @@ function Scene (element, scale, turn, pitch) {
     var raycaster = new THREE.Raycaster();
     var pickPoint = new THREE.Vector3(0, 0, -1);
     var pickDirection = new THREE.Vector3(0, 0, -1);
-    this.pickObject = function pickObject(x, y) {
-        //var point = new THREE.Vector3(x, y, -1);
+
+    // Take a screen coordinate and return whatever objects
+    // are intersected by a ray through the scene at that point.
+    this.pickObjects = function pickObjects(x, y) {
         pickPoint.set(x, y, -1);
         pickPoint.unproject( camera );
         pickDirection.set(0, 0, -1);
         pickDirection.transformDirection( camera.matrixWorld );
         raycaster.set( pickPoint, pickDirection );
-        var walls = scene.getObjectByName("walls");
-        if (walls) {
-            var intersects = raycaster.intersectObjects( walls.children, true );
-            return intersects;
-        }
-        return [];
+        var intersects = raycaster.intersectObjects(scene.children, true);
+        return intersects;
     };
-
-
-    // var pick_scene = this.pick_scene = new THREE.Scene();
-
-    // var pick_rtt = new THREE.WebGLRenderTarget(
-    //     width, height, {magFilter: THREE.NearestFilter,
-    //                     minFilter: THREE.NearestFilter});
-    // var framebuffer;
-
-    // function _render_pick(walls) {
-    //     console.log("render_pick");
-    //     var wall, color, pos, material, tmpMaps = {}, tmpColors = {};
-    //     var keys = Object.keys(walls);
-    //     keys.forEach(function (key) {
-    //         wall = walls[key];
-    //         pos = key2point(key);
-    //         // console.log("pos", pos);
-    //         color = new THREE.Color(pos[0]/256, pos[1]/256, pos[2]/256);
-    //         //material = new THREE.MeshBasicMaterial({color: color});
-    //         tmpMaps[key] = wall.material.map;
-    //         tmpColors[key] = wall.material.color;
-    //         // wall.material.map = null;
-    //         // wall.material.color = color;
-    //     });
-    //     renderer.render(scene, camera, pick_rtt );
-    //     // keys.forEach(function (key) {
-    //     //     walls[key].material.map = tmpMaps[key];
-    //     //     walls[key].material.color = tmpColors[key];
-    //     // });
-    //     framebuffer = pick_rtt.__webglFramebuffer;
-    //     _pick = null;
-    // };
-
-    // this.getRTTPixel = function getRTTPixel(x, y) {
-    //     console.log("getRTTPixel", x, y);
-    //     var gl = renderer.getContext();
-    //     gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
-    //     gl.viewport(0, 0, width, height);
-    //     var pixel = new Uint8Array(1 * 1 * 4);
-    //     gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
-    //     return pixel;
-    // };
-
-    // var _pick;
-    // function render_pick (walls) {
-    //     if (_pick) {
-    //         clearTimeout(_pick);
-    //     }
-    //     _pick = setTimeout(_render_pick, 500, walls);
-    // }
 
 };

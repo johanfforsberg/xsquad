@@ -1,4 +1,7 @@
-/** @jsx React.DOM */
+/* This is the "entrypoint" where things get started up */
+
+
+// some global helpers to deal with level data
 
 function key2point(key) {
     var z = key >> 16;
@@ -21,22 +24,22 @@ function point2key(point) {
     return point[0] + (point[1] << 8) + (point[2] << 16);
 }
 
+
 window.addEventListener("load", function () {
 
-
+    // these values are supplied by the server through the HTML template
     var gameId = document.getElementById("game-id").value;
     var username = document.getElementById("username").value;
-    var myTurn = false;
-    console.log("hejsan", gameId);
 
+    // the isometric game view
     var view = new View(document.getElementById("view"));
+
 
     /* React.js UI components */
 
-    var GameComponent = React.createClass({
+    var OverlayComponent = React.createClass({
 
         render: function () {
-            console.log("GameComponent", this.props);
             return React.createElement("div", {id: "hud"}, [
                 React.createElement("div", {id: "info"}, [
                     this.props.players[0] + "'s team:",
@@ -45,15 +48,12 @@ window.addEventListener("load", function () {
                         members: this.props.team.members,
                         pathGraph: this.props.level.graph
                     }),
-                        // selected: this.state.selectedMember,
-                        // select: this.selectMember}),
                     React.createElement("div", {className: "turn"},
                                         this.props.players.length < 2? "Waiting for an opponent." :
                                         (this.props.my_turn? "Your turn!" : "Opponent's turn")),
                     React.createElement("button", {
                         disabled: !this.props.my_turn,
                         onClick: endTurn}, "End Turn")
-
                 ]),
                 this.props.enemies? React.createElement(EnemiesComponent, {
                     player: this.props.players[1],
@@ -136,13 +136,20 @@ window.addEventListener("load", function () {
         view.addCallback("clickMember", memberClicked);
         view.addCallback("clickEnemy", enemyClicked);
 
-        setTimeout(loadView, 1000, view.updateFOV);   // ugly hack!
+        view.centerView(game.team.members[0].position, false);
+
+        view.addCallback("done", function () {loadView(view.updateFOV)});
+
+        // This is inefficient; first we're getting the game state, then
+        // we're waiting for the textures to load before asking the server
+        // for the field-of-view. This should be more parallell-y.
+
     }
 
     // render the overlay "HUD"
     function renderUI () {
         React.render(
-            React.createElement(GameComponent, game),
+            React.createElement(OverlayComponent, game),
             document.getElementById("overlay")
         );
     }
@@ -169,7 +176,7 @@ window.addEventListener("load", function () {
         view.selectTeamMember(i);
         game.selectedMember = i;
         if (center) {
-            view.centerView(game.team.members[i].position);
+            view.centerView(game.team.members[i].position, true);
         }
         renderUI();
     }
@@ -186,7 +193,7 @@ window.addEventListener("load", function () {
     }
 
     function enemySelected(i) {
-        view.centerView(game.enemies[i].position);
+        view.centerView(game.enemies[i].position, true);
     }
 
     function positionClicked(pos) {

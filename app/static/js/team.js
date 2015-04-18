@@ -6,6 +6,10 @@ TeamView = (function () {
 
         this.obj = new THREE.Object3D();
         // this.members = {};
+        if (isEnemy)
+            this.obj.name = "enemies";
+        else
+            this.obj.name = "team";
         var sprites = this.sprites = [];
 
         var _selected = 0;

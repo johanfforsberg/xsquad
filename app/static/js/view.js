@@ -94,10 +94,16 @@ View = (function () {
             levelDisplayMaxCeiling = levelDisplayMax;
             scene.add(group);
             scene.start();
+
+            runCallbacks("done");
+            // TODO: This callback business is ugly and will break as soon as
+            // we have to load more than one texture. Need to either do this
+            // more asynchronously; i.e. apply textures as they are loaded
+            // (which I find ugly) or wait until they are all loaded. But we
+            // don't want to block *loading* the view, just displaying it.
         });
 
     }
-
 
     function setWallColor (wall, color, ambient) {
         Object.keys(wall._materials).forEach(function (side) {
@@ -114,7 +120,6 @@ View = (function () {
          This is done by using two THREE.Color objects, one for each
          direction, and setting all the relevant walls' material color
          to one of these. Then we use Tween.js to make the transitions. */
-
 
         enemyTeam.hideAll();
         enemyTeam.update({members: newEnemies});
@@ -288,13 +293,54 @@ View = (function () {
         setLevelDisplayMax(levelDisplayMax+delta);
     }
 
+    var spriteCanvas, spriteRect;
+
     function selectVisible(x, y) {
-        var targets = scene.pickObject(x, y);
+        var targets = scene.pickObjects(x, y);
+        console.log("targets", targets);
         for (var i=0; i<targets.length; i++) {
-            var pos = key2point(targets[i].object.parent._key);
-            var level = pos[2];
-            if (levels[level].visible) {
-                return targets[i].object.parent;
+            var parent = targets[i].object.parent;
+            if (targets[i].object.name == "sprite") {
+                // a sprite (i.e. a person)
+                /* We take the texture image, blit it to a canvas (in
+                   order to access pixel data), figure out the
+                   intersection coordinates in local space and then
+                   get the pixel under the mouse. Then we check the
+                   alpha channel of that pixel to know if we're really
+                   pointing at the sprite.
+                */
+                var localPoint = targets[i].object.worldToLocal(targets[i].point);
+                var map = targets[i].object.material.map;
+                var img = map.image;
+                if (!spriteCanvas) {
+                    // very primitive caching
+                    spriteCanvas = document.createElement('canvas');
+                    spriteCanvas.width = img.width;
+                    spriteCanvas.height = img.height;
+                    spriteCanvas.getContext('2d').drawImage(img, 0, 0);
+                }
+                var w = Math.round(img.width * map.repeat.x),
+                    h = Math.round(img.height * map.repeat.y),
+                    xoffs = img.width * map.offset.x,
+                    yoffs = img.height * (.75 - map.offset.y),
+                    x = Math.round(xoffs + w * (localPoint.x * 2 + 1) / 2),
+                    y = Math.round(yoffs + h * (1 - (localPoint.y + 1) / 2));
+
+                var alpha = spriteCanvas.getContext("2d").getImageData(x, y, 1, 1).data[3];
+                var pos = parent.position.toArray();
+                if (alpha > 0) {
+                    return pos;  // yep, we're pointing at the sprite
+                }
+                // continue  // continue with anything behind
+            } else if (targets[i].object.parent._key) {
+                // it's a wall or floor
+                var pos = key2point(targets[i].object.parent._key);
+                var level = pos[2];
+                console.log(pos, level);
+                if (levels[level].visible) {
+                    //return targets[i].object.parent;
+                    return pos;
+                }
             }
         }
     }
@@ -307,13 +353,14 @@ View = (function () {
 
     var pathMarker;
     function clickCallback(x, y) {
-
+        console.log("clickCallback", x, y);
         // first check if the mouse click actually hit anything on the map
-        var target = selectVisible(x, y);
-
-        if (target) {
-            var pos = key2point(target._key);
-            var wall = walls[target._key];
+        var pos = selectVisible(x, y);
+        console.log(pos);
+        if (pos) {
+            //var pos = key2point(target._key);
+            var key = point2key(pos);
+            var wall = walls[key]  //target._key];
 
             var member = team.isAnyoneAt(pos);
             if (member > -1) {
@@ -338,13 +385,14 @@ View = (function () {
     }
 
     var _prevHoverPos;
-    function hoverCallback (x, y) {
-        var target = selectVisible(x, y);
-        if (target) {
-            var pos = key2point(target._key);
+    var hoverCallback = throttle(function (x, y) {
+        var pos = selectVisible(x, y);
+        if (pos) {
+            //var pos = key2point(target._key);
             if (pos != _prevHoverPos) {
                 _prevHoverPos = pos;
-                var wall = walls[target._key];
+                var key = point2key(pos);
+                var wall = walls[key];  //target._key];
                 if (R.contains(5, wall._sides)) {
                     // console.log("hover valid position", pos[0], pos[1], pos[2]);
                     cursor.visible = true;
@@ -359,7 +407,7 @@ View = (function () {
             cursor.visible = false;
             scene.render();
         }
-    }
+    }, 100, this);
 
 
     // calculate the angle of movement between two points
@@ -463,11 +511,15 @@ View = (function () {
         setTimeout(function () {scene.remove(shot); scene.render();}, 1000);
     }
 
-    function centerView(pos) {
-        new TWEEN.Tween(scene.table.position)
-            .onUpdate(scene.render)
-            .easing(TWEEN.Easing.Quadratic.InOut)
-            .to({x: pos[0], y: pos[1], z: pos[2]}, 500).start();
+    function centerView(pos, animate) {
+        if (animate) {
+            new TWEEN.Tween(scene.table.position)
+                .onUpdate(scene.render)
+                .easing(TWEEN.Easing.Quadratic.InOut)
+                .to({x: pos[0], y: pos[1], z: pos[2]}, 500).start();
+        } else {
+            scene.table.position.set(pos[0], pos[1], pos[2]);
+        }
     }
 
     // utility function to limit the rate at which a function is called

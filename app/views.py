@@ -181,6 +181,12 @@ def post_shot(gameid):
 
 @app.route('/games/<int:gameid>/movepath', methods=["POST"])
 def post_movepath(gameid):
+    """Move a given team member along a path.
+    Makes sure that the path is valid, then calculates the FOV changes
+    for each step, and checks if the visibility of enemies changes.
+    If not explicitly turned off, the walk will be terminated if
+    an enemy comes into view at any time.
+    """
     game = games[int(gameid)]
     if game.active_player != session["username"]:
         abort(403)
@@ -192,10 +198,9 @@ def post_movepath(gameid):
     rotation = request.json["rotation"]
     stop_for_enemy = not request.json.get("dont_stop")
 
-    print path
-
+    # verify that the path can be traversed by the member
     costs = member.check_path(game.level, path)
-    if costs and sum(costs) <= member.moves:
+    if sum(costs, 0) <= member.moves:
         start_fov, start_enemies = game.get_team_fov(team, exclude_members=[member_i])
         fov_diffs = []
         enemy_diffs = []

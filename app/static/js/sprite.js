@@ -5,6 +5,7 @@
 Sprite = function (name, directions, width, height, radius, rotation, turn, isEnemy) {
 
     var obj = this.obj = new THREE.Object3D();
+    obj.name = name;
     this.position = obj.position;
     this.directions = directions;
 
@@ -112,6 +113,8 @@ Sprite = function (name, directions, width, height, radius, rotation, turn, isEn
             var texture = value.clone();  // I think this is a shallow clone; sharing image?
             texture.needsUpdate = true;
 
+            console.log("texture", texture);
+
             this.material = new THREE.MeshLambertMaterial({map: texture});
             this.material.transparent = true;
             this.material.map.magFilter = THREE.NearestFilter;
@@ -121,6 +124,7 @@ Sprite = function (name, directions, width, height, radius, rotation, turn, isEn
 
             var plane = new THREE.PlaneBufferGeometry( width, height);
             var sprite = new THREE.Mesh(plane, this.material);
+            sprite.name = "sprite";
             // some magic numbers, for now
             sprite.position.z = 0.5;
             sprite.position.y = -0;
