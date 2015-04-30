@@ -90,7 +90,7 @@ Sprite = function (name, directions, width, height, radius, rotation, turn, isEn
         var spriteMaterial = new THREE.SpriteMaterial({ map: texture });
         var sprite = new THREE.Sprite( spriteMaterial );
         sprite.scale.set(.12, .25, 1);
-        sprite.position.z += 2;
+        sprite.position.z += 1.5;
         return sprite
     }
 
@@ -117,6 +117,7 @@ Sprite = function (name, directions, width, height, radius, rotation, turn, isEn
 
             this.material = new THREE.MeshLambertMaterial({map: texture});
             this.material.transparent = true;
+
             this.material.map.magFilter = THREE.NearestFilter;
             this.material.map.repeat.x = 1/directions;
             this.material.map.repeat.y = 1/4;
@@ -126,7 +127,7 @@ Sprite = function (name, directions, width, height, radius, rotation, turn, isEn
             var sprite = new THREE.Mesh(plane, this.material);
             sprite.name = "sprite";
             // some magic numbers, for now
-            sprite.position.z = 0.5;
+            sprite.position.z = 0.45;
             sprite.position.y = -0;
             sprite.rotation.x = 60 / 180 * Math.PI;  // this needs to be suited to the
             console.log("this._viewTurn", this._viewTurn)
@@ -192,7 +193,6 @@ Sprite.prototype.updateOffset = function () {
 };
 
 Sprite.prototype.setTurn = function (turn) {
-    console.log("setTurn", turn);
     this._viewTurn = turn;
     this.obj.rotation.z = -turn / 180 * Math.PI;
     this.updateOffset();

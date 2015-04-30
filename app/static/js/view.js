@@ -289,7 +289,7 @@ View = (function () {
     }
 
     function levelDisplayCallback(delta) {
-        console.log("levelDisdsad", delta);
+        // console.log("levelDisdsad", delta);
         setLevelDisplayMax(levelDisplayMax+delta);
     }
 
@@ -297,7 +297,7 @@ View = (function () {
 
     function selectVisible(x, y) {
         var targets = scene.pickObjects(x, y);
-        console.log("targets", targets);
+        // console.log("targets", targets);
         for (var i=0; i<targets.length; i++) {
             var parent = targets[i].object.parent;
             if (targets[i].object.name == "sprite") {
@@ -336,7 +336,7 @@ View = (function () {
                 // it's a wall or floor
                 var pos = key2point(targets[i].object.parent._key);
                 var level = pos[2];
-                console.log(pos, level);
+                // console.log(pos, level);
                 if (levels[level].visible) {
                     //return targets[i].object.parent;
                     return pos;
@@ -356,7 +356,7 @@ View = (function () {
         console.log("clickCallback", x, y);
         // first check if the mouse click actually hit anything on the map
         var pos = selectVisible(x, y);
-        console.log(pos);
+        // console.log(pos);
         if (pos) {
             //var pos = key2point(target._key);
             var key = point2key(pos);

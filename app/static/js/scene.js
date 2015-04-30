@@ -81,7 +81,6 @@ function Scene (element, scale, turn, pitch) {
     // This means it's safe to call "render" as often as you like;
     // the scene is only rendered at most once per frame anyway.
     var render = this.render = function () {
-        console.log("dender");
         changed = true;
     };
 
