@@ -273,6 +273,10 @@ window.addEventListener("load", function () {
             dataType: "json",
             contentType: "application/json",
             data: JSON.stringify({attacker: member, target: enemy}),
+            error: function (result) {
+                game.message = member + " can't see enemy " + enemy + "!";
+                renderUI();
+            },
             success: function (result) {
                 game.message = member + " fired at enemy " +
                     (result.success? "and hit!" : "but missed.");
