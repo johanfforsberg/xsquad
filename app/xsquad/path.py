@@ -29,25 +29,6 @@ def down(p):
     return p[5] != EMPTY1
 
 
-# def west(p):
-#     return p & 1 > 0
-
-# def east(p):
-#     return p & (1 << 2) > 0
-
-# def south(p):
-#     return p & (1 << 4) > 0
-
-# def north(p):
-#     return p & (1 << 6) > 0
-
-# def up(p):
-#     return p & (1 << 8) > 0
-
-# def down(p):
-#     return p & (1 << 10) > 0
-
-
 def position_delta(key1, key2):
     a = key2point(key1)
     b = key2point(key2)
