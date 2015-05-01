@@ -79,6 +79,7 @@ window.addEventListener("load", function () {
                             className: ("member " + (self.props.selected === i? "selected" : "")),
                             onClick: function () {self.selectMember(i);}}, [
                     React.createElement("div", null, "Name: " + member.name),
+                    React.createElement("div" , null, "Health:" + member.health +"/"+ member.maxhealth),
                     React.createElement("div" , null, "Moves:" + member.moves +"/"+ member.speed)
                 ]);
             });
@@ -173,10 +174,15 @@ window.addEventListener("load", function () {
     // Callbacks for various interactions
 
     function memberClicked(i, center) {
-        view.selectTeamMember(i);
-        game.selectedMember = i;
-        if (center) {
-            view.centerView(game.team.members[i].position, true);
+        var member = game.team.members[i];
+        if (member.health > 0) {
+            view.selectTeamMember(i);
+            game.selectedMember = i;
+            if (center) {
+                view.centerView(game.team.members[i].position, true);
+            }
+        } else {
+            game.message = "Member " + i + " is out of action!"
         }
         renderUI();
     }
@@ -274,16 +280,19 @@ window.addEventListener("load", function () {
             contentType: "application/json",
             data: JSON.stringify({attacker: member, target: enemy}),
             error: function (result) {
-                game.message = member + " can't see enemy " + enemy + "!";
+                game.message = member + " can't fire at enemy " + enemy + "!";
                 renderUI();
             },
             success: function (result) {
                 game.message = member + " fired at enemy " +
                     (result.success? "and hit!" : "but missed.");
-                renderUI();
-                member = game.team.members[result.attacker];
+                // renderUI();
+                member = game.team.members[result.attacker.name];
+                console.log("attacker", member);
+                member.moves = result.attacker.moves;
                 enemy = game.enemies[result.target];
-                view.shotsFired(member.position, enemy.position);
+                view.shotsFired(member, enemy, true);
+                renderUI();
             }});
     }
 
@@ -334,13 +343,21 @@ window.addEventListener("load", function () {
             showPath();
             break;
         case "opponent_fired":
-            game.message = "Opponent fired at " + msg.data.member +
+            game.message = "Opponent fired at " + msg.data.target.name +
                 (msg.data.success? " and hit!" : " but missed!");
-            var member = game.team.members[msg.data.member];
-            var enemy = game.enemies[msg.data.enemy];
-            view.shotsFired(enemy.position, member.position);
+            var member = game.team.members[msg.data.target.name];
+            member.health = msg.data.target.health;
+            var enemy = game.enemies[msg.data.attacker];
+            view.shotsFired(enemy, member, false);
+            break;
+        case "game_lost":
+            game.message = "You have lost the game!"
+            break;
+        case "game_won":
+            game.message = "You have won the game!"
             break;
         }
+
         renderUI();
     });
 

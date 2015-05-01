@@ -12,7 +12,7 @@ TeamView = (function () {
             this.obj.name = "team";
         var sprites = this.sprites = [];
 
-        var _selected = 0;
+        var _selected = -1;
 
         teamData.members.forEach(function (member, i) {
             // this.members[member.name] = member;
@@ -21,6 +21,7 @@ TeamView = (function () {
             sprite.position.set(member.position[0], member.position[1],
                                 member.position[2]);
             sprite.obj.visible = member.visible;
+            sprite.dead = member.health <= 0;
             console.log("sprite", sprite);
             sprites.push(sprite);
             sprite.selected = isEnemy || (i === _selected);
@@ -50,11 +51,11 @@ TeamView = (function () {
     }
 
     Team.prototype.select = function (i) {
-        if (this.selected) {
-            this.sprites[this.selected].selected = false;
+        if (this._selected >= 0) {
+            this.sprites[this._selected].selected = false;
         }
         this.sprites[i].selected = true;
-        this.selected = i;
+        this._selected = i;
     };
 
     Team.prototype.update = function (teamData) {
@@ -63,6 +64,7 @@ TeamView = (function () {
             var sprite = this.sprites[parseInt(member.name)];
             sprite.position.set(member.position[0], member.position[1], member.position[2]);
             sprite.rotation = member.rotation;
+            sprite.dead = member.health <= 0;
         }, this);
     };
 
@@ -76,11 +78,25 @@ TeamView = (function () {
 
     Team.prototype.showMember = function (name) {
         console.log("showMember", name, this.sprites);
-        this.sprites[parseInt(name)].obj.visible = true;
+        var member = this.sprites[parseInt(name)]
+        member.obj.visible = true;
     };
 
     Team.prototype.hideMember = function (name) {
+        console.log("hideMember", name)
         this.sprites[parseInt(name)].obj.visible = false;
+    };
+
+    Team.prototype.markMemberDead = function (name) {
+        var sprite = this.sprites[parseInt(name)];
+        console.log("markMemberdead", name, sprite);
+        sprite.material.opacity = 0.5;
+    };
+
+    Team.prototype.hideDeadMembers = function () {
+        this.members.forEach(function (sprite) {
+
+        });
     };
 
     Team.prototype.setTurn = function (turn) {

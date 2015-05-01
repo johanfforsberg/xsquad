@@ -69,12 +69,12 @@ def pairwise(iterable):
 
 
 class Person(object):
-    def __init__(self, name=None, maxhealth=100,
+    def __init__(self, name=None, maxhealth=50, health=None,
                  position=None, rotation=0, speed=100, moves=100,
                  vision=8):
         self.name = name
         self.maxhealth = maxhealth
-        self.health = maxhealth
+        self.health = health if health is not None else maxhealth
         self.position = position
         self.rotation = rotation
         self.speed = speed
@@ -83,19 +83,21 @@ class Person(object):
         self.enemies_seen = []
         print self.name, "speed", self.speed
 
+    @property
+    def dead(self):
+        return self.health <= 0
+
     def reset(self):
         self.moves = self.speed
 
-    def find_path(self, level, pos):
-        path = find_path(level, self.position, pos, self.moves)
-        return path
+    # def find_path(self, level, pos):
+    #     path = find_path(level, self.position, pos, self.moves)
+    #     return path
 
-    def possible_moves(self, level):
-        return get_distances(level, self.position, self.moves)
+    # def possible_moves(self, level):
+    #     return get_distances(level, self.position, self.moves)
 
     def move(self, level, pos):
-        #neighbors = get_neighbors(self.position, level)
-        #print pos, dict(neighbors).keys()
         cost = level.check_move(self.position, pos)
         if cost:
             if self.moves > 0:
@@ -121,10 +123,6 @@ class Person(object):
                     maxhealth=self.maxhealth, position=self.position,
                     rotation=self.rotation, speed=self.speed,
                     moves=self.moves, vision=self.vision)
-
-    @property
-    def dead(self):
-        return self.health <= 0
 
     @classmethod
     def create(cls, dbdict):
@@ -154,6 +152,11 @@ class Team(object):
             member = Person(name=str(i), position=position, rotation=randint(0, 7)*45)
             members.append(member)
         return members
+
+    @property
+    def eliminated(self):
+        print "eliminated", self.player, [member.dead for member in self.members]
+        return all(member.dead for member in self.members)
 
     @classmethod
     def create(cls, dbd):

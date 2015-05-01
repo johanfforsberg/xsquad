@@ -509,11 +509,21 @@ View = (function () {
         return line;
     }
 
-    function shotsFired(pos1, pos2) {
-        var shot = makeShot(pos1, pos2);
+    function shotsFired(attacker, target, friendly) {
+
+        var shot = makeShot(attacker.position, target.position);
         scene.add(shot);
         scene.render();
-        setTimeout(function () {scene.remove(shot); scene.render();}, 1000);
+        setTimeout(function () {
+            scene.remove(shot);
+            scene.render();
+            if (target.health <= 0) {
+                if (friendly)
+                    enemyTeam.markMemberDead(target.name);
+                else
+                    team.markMemberDead(target.name);
+            }
+        }, 1000);
     }
 
     function centerView(pos, animate) {

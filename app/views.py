@@ -70,6 +70,8 @@ def get_state(gameid):
     - rotation: which direction the member is facing (int)
     - speed: how many actions the member may take per turn
     - moves: number of actions left this turn
+    - maxhealth: maximum amount of health
+    - health: amount of health left
     - vision: how far the member can see
 
     """
@@ -146,10 +148,15 @@ def post_shot(gameid):
 
     attacker_i = request.json["attacker"]
     attacker = team.members[attacker_i]
+    if attacker.moves < 25:
+        abort(403)
+
     target_i = request.json["target"]
     target = opponent_team.members[target_i]
 
     print attacker_i, "fires at", target_i
+
+    attacker.moves -= 25
 
     # simple chance-to-hit calculation based on visibility and distance
     origin = (attacker.position[0], attacker.position[1],
@@ -163,18 +170,26 @@ def post_shot(gameid):
         distance = sqrt((origin[0] - upper_target[0])**2 +
                         (origin[1] - upper_target[1])**2 +
                         (origin[2] - upper_target[2]-0.5)**2)
-        chance = ((lower_visibility + upper_visibility) / 2.0) / distance
+        chance = ((lower_visibility + upper_visibility) / 2.0) / sqrt(distance)
         print "Distance:", distance
         print "Chance to hit:", chance
         hit = random() < chance
+        if hit:
+            target.health -= 10 + round(10 * random())
 
         broadcast(gameid, game.inactive_player, {"type": "opponent_fired",
                                                  "data": {
-                                                     "enemy": attacker.name,
-                                                     "member": target.name,
+                                                     "attacker": attacker.name,
+                                                     "target": target.dbdict(),
                                                      "success": hit
                                                  }})
-        return jsonify(success=hit, attacker=attacker.name, target=target.name)
+
+        if opponent_team.eliminated:
+            print("game over; %s won!" % game.active_player)
+            broadcast(gameid, game.active_player, {"type": "game_won"})
+            broadcast(gameid, game.inactive_player, {"type": "game_lost"})
+
+        return jsonify(success=hit, attacker=attacker.dbdict(), target=target.name)
 
     abort(403)
 

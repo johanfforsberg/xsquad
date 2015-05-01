@@ -117,6 +117,8 @@ Sprite = function (name, directions, width, height, radius, rotation, turn, isEn
 
             this.material = new THREE.MeshLambertMaterial({map: texture});
             this.material.transparent = true;
+            if (dead)
+                this.material.opacity = 0.5;
 
             this.material.map.magFilter = THREE.NearestFilter;
             this.material.map.repeat.x = 1/directions;
@@ -164,6 +166,16 @@ Sprite = function (name, directions, width, height, radius, rotation, turn, isEn
         set: function (value) {
             if (this.material)
                 this.material.map.offset.y = (1+value)/4;
+        }
+    });
+
+    var dead = false;
+    Object.defineProperty(this, "dead", {
+        get: function () {return dead},
+        set: function (value) {
+            dead = value;
+            if (this.material)
+                this.material.opacity = dead? 0.5 : 1;
         }
     });
 

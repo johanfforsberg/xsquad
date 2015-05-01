@@ -47,6 +47,12 @@ class Game(object):
             return False
         return self.teams[self.players.index(self.inactive_player)]
 
+    @property
+    def game_over(self):
+        for team in self.teams:
+            if team.eliminated:
+                return True
+
     def get_team(self, player):
         for team in self.teams:
             if team.player == player:
