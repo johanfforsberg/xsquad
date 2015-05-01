@@ -120,7 +120,8 @@ window.addEventListener("load", function () {
     /* end React.js stuff */
 
 
-    var game;   // this is where all the game state is kept!
+    var game;  // this is where all the game state is kept!
+    var graph;  // handle the path graph for movement
 
     // Kick it all into action after fetching the current game state
     $.ajax(gameId + "/state", {
@@ -134,6 +135,8 @@ window.addEventListener("load", function () {
 
         game = gameState;
         game.messages = []
+        graph = new PathGraph(game.level.graph);
+        console.log("graph", graph);
 
         renderUI();
 
@@ -235,8 +238,8 @@ window.addEventListener("load", function () {
 
     function moveTeamMember (i, pos) {
         var member = game.team.members[i];
-        var path = Path.findPath(point2key(member.position),
-                                 point2key(pos), game.level.graph);
+        var path = graph.findPath(point2key(member.position),
+                                  point2key(pos));
         if (path) {
             path = path.map(key2point);
             moveAlongPath(parseInt(member.name), path, function (result) {

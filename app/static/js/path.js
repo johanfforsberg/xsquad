@@ -1,4 +1,8 @@
-Path = (function () {
+PathGraph = (function () {
+
+    function _Path(graph) {
+        this.graph = graph;
+    }
 
     /* Note: all the helper functions are not used anymore since
      we now get the pathfindig graph from the server.
@@ -90,7 +94,7 @@ Path = (function () {
         return 2 * Math.sqrt(Math.pow(p1[0] - p2[0], 2) + Math.pow(p1[1] - p2[1], 2) + Math.pow(p1[2] - p2[2], 2));
     }
 
-    function findPath (start, goal, graph) {
+    function findPath (start, goal) {
 
         console.log("findPath", key2point(start), key2point(goal));
 
@@ -111,7 +115,7 @@ Path = (function () {
                 break;
             }
             //neighbors = getNeighbors(current.key, world, last);
-            neighbors = graph[current.key];
+            neighbors = this.graph[current.key];
 
             // console.log("neighbors", key2point(current), neighbors);
             var newCost, next;
@@ -157,6 +161,9 @@ Path = (function () {
         return connections;
     }
 
-    return {findPath: findPath, makePathGraph: makePathGraph};
+    _Path.prototype.findPath = R.memoize(findPath);
+
+    //return {findPath: findPath, makePathGraph: makePathGraph};
+    return _Path;
 
 })();
