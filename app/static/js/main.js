@@ -325,12 +325,12 @@ window.addEventListener("load", function () {
             game.my_turn = true;
             game.players = msg.data.players;
             var new_player = game.players[1];
-            game.messages.push("Player " + new_player + " joined! Your turn.");
+            game.messages.push("---Player " + new_player + " joined! Your turn.---");
             break;
         case "opponent_done":
             console.log("OPPONENT DONE; YOUR TURN!", msg.data);
             game.my_turn = true;
-            game.messages.push("Opponent done; your turn!");
+            game.messages.push("---Opponent done; your turn!---");
             break;
         case "opponent_visible":
             console.log("ENEMY SEEN:", msg.data.paths, msg.data.seen_at_end);
@@ -358,10 +358,10 @@ window.addEventListener("load", function () {
             view.shotsFired(enemy, member, false);
             break;
         case "game_lost":
-            game.messages.push("You have lost the game!");
+            game.messages.push("+++You have lost the game!+++");
             break;
         case "game_won":
-            game.message.push("You have won the game!");
+            game.messages.push("+++You have won the game!+++");
             break;
         }
 
