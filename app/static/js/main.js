@@ -42,7 +42,7 @@ window.addEventListener("load", function () {
         render: function () {
             return React.createElement("div", {id: "hud"}, [
                 React.createElement("div", {id: "info"}, [
-                    this.props.players[0] + "'s team:",
+                    username + "'s team:",
                     React.createElement(TeamComponent, {
                         selected: this.props.selectedMember,
                         members: this.props.team.members,
@@ -117,7 +117,7 @@ window.addEventListener("load", function () {
 
     var game;   // this is where all the game state is kept!
 
-    // Kick it all into action
+    // Kick it all into action after fetching the current game state
     $.ajax(gameId + "/state", {
         success: startUp
     });
