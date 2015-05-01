@@ -59,7 +59,7 @@ window.addEventListener("load", function () {
                     player: this.props.players[1],
                     enemies: this.props.enemies
                 }): null,
-                React.createElement(MessageComponent, {message: this.props.message})
+                React.createElement(MessageComponent, {messages: this.props.messages})
             ]);
         }
 
@@ -106,8 +106,12 @@ window.addEventListener("load", function () {
     var MessageComponent = React.createClass({
 
         render: function () {
-            console.log("MessageComponent", this.props.message);
-            return React.createElement("div", {id: "message"}, this.props.message);
+            var messages = R.reverse(this.props.messages).map(function (msg, i) {
+                return React.createElement(
+                    "div", {key: i, className: "message " + (i == 0? "latest": "old")}, msg);
+            })
+            //console.log("MessageComponent", this.props.messages);
+            return React.createElement("div", {id: "messages"}, messages);
         }
 
     });
@@ -128,6 +132,8 @@ window.addEventListener("load", function () {
         console.log("startUp", gameState);
 
         game = gameState;
+        game.messages = []
+
         renderUI();
 
         view.makeWorld(game.level);
@@ -182,7 +188,7 @@ window.addEventListener("load", function () {
                 view.centerView(game.team.members[i].position, true);
             }
         } else {
-            game.message = "Member " + i + " is out of action!"
+            game.messages.push("Member " + i + " is out of action!");
         }
         renderUI();
     }
@@ -193,7 +199,7 @@ window.addEventListener("load", function () {
                 shootAtEnemy(game.selectedMember, i);
             }
         } else {
-            game.message = "Not your turn; can't attack!";
+            game.messages.push("Not your turn; can't attack!");
             renderUI();
         }
     }
@@ -208,7 +214,7 @@ window.addEventListener("load", function () {
                 moveTeamMember(game.selectedMember, pos);
             }
         } else {
-            game.message = "Not your turn, can't move!";
+            game.messages.push("Not your turn, can't move!");
             renderUI();
         }
     }
@@ -217,7 +223,8 @@ window.addEventListener("load", function () {
         $.ajax(gameId + "/done", {
             type: "POST",
             success: function (data) {
-                game = R.mixin(game, R.mixin(data, {message: "Waiting for opponent..."}));
+                game.messages.push("Waiting for opponent...");
+                // game = R.mixin(game, R.mixin(data, {message: "Waiting for opponent..."}));
                 renderUI();
             }
         });
@@ -234,7 +241,7 @@ window.addEventListener("load", function () {
             moveAlongPath(parseInt(member.name), path, function (result) {
                 game.team = result.team;
                 if (result.path.length < path.length) {
-                    game.message = "Enemy spotted; stopping!"
+                    game.messages.push("Enemy spotted; stopping!");
                 }
                 renderUI(result);
                 view.moveTeamMember(member.name, result.path,
@@ -280,12 +287,12 @@ window.addEventListener("load", function () {
             contentType: "application/json",
             data: JSON.stringify({attacker: member, target: enemy}),
             error: function (result) {
-                game.message = member + " can't fire at enemy " + enemy + "!";
+                game.messages.push(member + " can't fire at enemy " + enemy + "!");
                 renderUI();
             },
             success: function (result) {
-                game.message = member + " fired at enemy " +
-                    (result.success? "and hit!" : "but missed.");
+                game.messages.push(member + " fired at enemy " +
+                                   (result.success? "and hit!" : "but missed."));
                 // renderUI();
                 member = game.team.members[result.attacker.name];
                 console.log("attacker", member);
@@ -318,17 +325,17 @@ window.addEventListener("load", function () {
             game.my_turn = true;
             game.players = msg.data.players;
             var new_player = game.players[1];
-            game.message = "Player " + new_player + " joined! Your turn.";
+            game.messages.push("Player " + new_player + " joined! Your turn.");
             break;
         case "opponent_done":
             console.log("OPPONENT DONE; YOUR TURN!", msg.data);
             game.my_turn = true;
-            game.message = "Opponent done; your turn!";
+            game.messages.push("Opponent done; your turn!");
             break;
         case "opponent_visible":
             console.log("ENEMY SEEN:", msg.data.paths, msg.data.seen_at_end);
-            game.message = "Enemy movement spotted! " +
-                (!msg.data.seen_at_end? " Moved out of sight." : "");
+            game.messages.push("Enemy movement spotted! " +
+                               (!msg.data.seen_at_end? " Moved out of sight." : ""));
             var paths = msg.data.paths;
             var enemy = msg.data.enemy;
             game.enemies[enemy.name] = enemy;
@@ -343,18 +350,18 @@ window.addEventListener("load", function () {
             showPath();
             break;
         case "opponent_fired":
-            game.message = "Opponent fired at " + msg.data.target.name +
-                (msg.data.success? " and hit!" : " but missed!");
+            game.messages.push("Opponent fired at " + msg.data.target.name +
+                               (msg.data.success? " and hit!" : " but missed!"));
             var member = game.team.members[msg.data.target.name];
             member.health = msg.data.target.health;
             var enemy = game.enemies[msg.data.attacker];
             view.shotsFired(enemy, member, false);
             break;
         case "game_lost":
-            game.message = "You have lost the game!"
+            game.messages.push("You have lost the game!");
             break;
         case "game_won":
-            game.message = "You have won the game!"
+            game.message.push("You have won the game!");
             break;
         }
 
