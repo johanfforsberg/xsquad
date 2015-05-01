@@ -27,8 +27,9 @@ body, html {
 }
 
 div.member {
+    margin: 3px;
     color: green;
-    border: 2px solid black;
+    border: 2px solid darkgreen;
 }
 
 div.member.selected {
