@@ -106,7 +106,7 @@ window.addEventListener("load", function () {
     var MessageComponent = React.createClass({
 
         render: function () {
-            var messages = R.reverse(this.props.messages).map(function (msg, i) {
+            var messages = R.take(5, R.reverse(this.props.messages)).map(function (msg, i) {
                 return React.createElement(
                     "div", {key: i, className: "message " + (i == 0? "latest": "old")}, msg);
             })
