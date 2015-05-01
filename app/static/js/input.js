@@ -57,7 +57,6 @@ Input = (function (element, view) {
             }
 
             function onMouseOut (event) {
-                onMouseup(event);
                 leaveCallback();
             }
         }
