@@ -40,6 +40,7 @@ window.addEventListener("load", function () {
     var OverlayComponent = React.createClass({
 
         render: function () {
+            console.log("my turn", this.props.my_turn);
             return React.createElement("div", {id: "hud"}, [
                 React.createElement("div", {id: "info"}, [
                     username + "'s team:",
@@ -223,8 +224,8 @@ window.addEventListener("load", function () {
         $.ajax(gameId + "/done", {
             type: "POST",
             success: function (data) {
+                game = R.mixin(game, data);
                 game.messages.push("Waiting for opponent...");
-                // game = R.mixin(game, R.mixin(data, {message: "Waiting for opponent..."}));
                 renderUI();
             }
         });
