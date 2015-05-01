@@ -48,35 +48,32 @@ cpdef world_visibility(dict world, tuple observer, int horizon):
 EMPTY1 = "."
 EMPTY = EMPTY1 * 6
 
-cdef unsigned char west(p):
+cdef unsigned char west(bytes p):
     return p[0] != EMPTY1
 
-cdef unsigned char east(p):
+cdef unsigned char east(bytes p):
     return p[1] != EMPTY1
 
-cdef unsigned char south(p):
+cdef unsigned char south(bytes p):
     return p[2] != EMPTY1
 
-cdef unsigned char north(p):
+cdef unsigned char north(bytes p):
     return p[3] != EMPTY1
 
-cdef unsigned char up(p):
+cdef unsigned char up(bytes p):
     return p[4] != EMPTY1
 
-cdef unsigned char down(p):
+cdef unsigned char down(bytes p):
     return p[5] != EMPTY1
 
 
-cpdef unsigned char check_passage(int x1, int y1, int z1, int x2, int y2, int z2, dict world):
+cdef unsigned char check_passage(int x1, int y1, int z1, int x2, int y2, int z2, dict world):
 
-    #return False
+    "Check whether it is possible to move from a position to an adjacent one in the world."
 
     cdef int p1, p2, passages = 0
-    # if x2 < x1:
-    #     return False
 
-    if x1 == x2 and y1 == y2 and z1 == z2:
-
+    if x1 == x2 and y1 == y2 and z1 == z2:  # trivial case
         return True
 
     p1 = xyz2key(x1, y1, z1)
@@ -89,8 +86,7 @@ cpdef unsigned char check_passage(int x1, int y1, int z1, int x2, int y2, int z2
 
     # lower corners
 
-    #cdef unsigned char *e, *w, *s, *n, *u, *d
-
+    cdef bytes e, w, s, n, u, d
 
     if x1 > x2 and y1 > y2 and z1 > z2:  # wsd
         w = world.get(xyz2key(x1-1, y1, z1), EMPTY)
@@ -230,6 +226,9 @@ cpdef unsigned int line_of_sight_3d(
     """
     Cythonification and slight modification of the C++ code found at
     https://gist.githubusercontent.com/yamamushi/5823518/raw/6571ec0fa01d2e3378a9f5bdebdd9c41b176f4ed/bresenham3d
+    Essentially draws a discretized line between two points and checks that no walls or objects are
+    in the way. Note that you don't generally get the same line when reversing the order
+    of the points.
     """
 
     cdef int i, dx, dy, dz, l, m, n, x_inc, y_inc, z_inc, err_1, err_2, dx2, dy2, dz2, unit
@@ -260,10 +259,8 @@ cpdef unsigned int line_of_sight_3d(
         for i in xrange(l):
             if not check_passage(last_point[0], last_point[1], last_point[2],
                                  point[0], point[1], point[2], world):
-                return False  #point[0] + (point[1] << 8) + (point[2] << 16)
-            #print "x", x
-            # if x in world:
-            #     return x
+                return False
+
             last_point[0] = point[0]
             last_point[1] = point[1]
             last_point[2] = point[2]
@@ -282,12 +279,8 @@ cpdef unsigned int line_of_sight_3d(
         for i in xrange(m):
             if not check_passage(last_point[0], last_point[1], last_point[2],
                                  point[0], point[1], point[2], world):
-                return False  # point[0] + (point[1] << 8) + (point[2] << 16)
+                return False
 
-            #x = point[0] + (point[1] << 8) + (point[2] << 16)
-            #print "x", x
-            #if x in world:
-            #    return x
             last_point[0] = point[0]
             last_point[1] = point[1]
             last_point[2] = point[2]
@@ -307,12 +300,8 @@ cpdef unsigned int line_of_sight_3d(
         for i in xrange(n):
             if not check_passage(last_point[0], last_point[1], last_point[2],
                                  point[0], point[1], point[2], world):
-                return False  # point[0] + (point[1] << 8) + (point[2] << 16)
+                return False
 
-            #x = point[0] + (point[1] << 8) + (point[2] << 16)
-            #print "x", x
-            #if x in world:
-            #    return x
             last_point[0] = point[0]
             last_point[1] = point[1]
             last_point[2] = point[2]
@@ -331,25 +320,25 @@ cpdef unsigned int line_of_sight_3d(
                          point[0], point[1], point[2], world)
 
 
-# another experimental version, based on raycasting
-cdef line_of_sight_3df(
-    unsigned char x1, unsigned char y1, unsigned char z1,
-    const unsigned char x2, const unsigned char y2, const unsigned char z2,
-    dict world):
+# # another experimental version, based on raycasting
+# cdef line_of_sight_3df(
+#     unsigned char x1, unsigned char y1, unsigned char z1,
+#     const unsigned char x2, const unsigned char y2, const unsigned char z2,
+#     dict world):
 
-    cdef float x=float(x1), y=float(y1), z=float(z1)
-    cdef float lx = x2-x1, ly = y2-y1, lz = z2-z1
-    cdef float length = sqrt(lx**2 + ly**2 + lz**2), t=0., step=0.2
-    cdef float dx = step*lx/length, dy = step*ly/length, dz = step*lz/length
-    cdef int strength = 3
-    while t <= length:
-        t += step
-        x += dx
-        y += dy
-        z += dz
-        pos = xyz2key(int(round(x)), int(round(y)), int(round(z)))
-        if pos in world:
-            strength -= 1
-        if strength <= 0:
-            return 0
-    return strength
+#     cdef float x=float(x1), y=float(y1), z=float(z1)
+#     cdef float lx = x2-x1, ly = y2-y1, lz = z2-z1
+#     cdef float length = sqrt(lx**2 + ly**2 + lz**2), t=0., step=0.2
+#     cdef float dx = step*lx/length, dy = step*ly/length, dz = step*lz/length
+#     cdef int strength = 3
+#     while t <= length:
+#         t += step
+#         x += dx
+#         y += dy
+#         z += dz
+#         pos = xyz2key(int(round(x)), int(round(y)), int(round(z)))
+#         if pos in world:
+#             strength -= 1
+#         if strength <= 0:
+#             return 0
+#     return strength
