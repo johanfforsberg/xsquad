@@ -2,7 +2,7 @@ Input = (function (element, view) {
 
     // Handle mouse rotate/pan events
     function setupMouseInteractions(element, panCallback, rotateCallback, zoomCallback,
-                                    clickCallback, hoverCallback) {
+                                    clickCallback, hoverCallback, leaveCallback) {
 
         function onMousedown(event) {
 
@@ -20,7 +20,7 @@ Input = (function (element, view) {
             element.removeEventListener("mousemove", onMousemove);
             element.addEventListener("mousemove", _onMousemove);
             element.addEventListener("mouseup", onMouseup);
-            element.addEventListener("mouseout", onMouseup);
+            element.addEventListener("mouseout", onMouseOut);
             var leftbutton = event.which == 1,
                 middlebutton = event.which == 2,
                 rightbutton = event.which == 3;
@@ -55,7 +55,14 @@ Input = (function (element, view) {
                 element.removeEventListener("mouseout", onMouseup);
                 element.addEventListener("mousemove", onMousemove);
             }
+
+            function onMouseOut (event) {
+                onMouseup(event);
+                leaveCallback();
+            }
         }
+
+
 
         // helper for mousewheel events
         var hookEvent = function (element, eventName, callback) {

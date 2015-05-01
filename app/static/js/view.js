@@ -385,7 +385,7 @@ View = (function () {
     }
 
     var _prevHoverPos;
-    var hoverCallback = throttle(function (x, y) {
+    var hoverCallback = function (x, y) {
         var pos = selectVisible(x, y);
         if (pos) {
             //var pos = key2point(target._key);
@@ -407,8 +407,13 @@ View = (function () {
             cursor.visible = false;
             scene.render();
         }
-    }, 100, this);
+    }  //, 100, this);
 
+    var leaveCallback = function () {
+        console.log("leave")
+        cursor.visible = false;
+        scene.render();
+    }
 
     // calculate the angle of movement between two points
     function getDirection (from, to) {
@@ -556,7 +561,7 @@ View = (function () {
         scene.add(cursor);
 
         Input.setupMouse(element, panCallback, rotateCallback,
-                         zoomCallback, clickCallback, hoverCallback);
+                         zoomCallback, clickCallback, hoverCallback, leaveCallback);
         Input.setupKeyboard(turnCharacterCallback, rotateCallback, panCallback,
                             levelDisplayCallback);
 
