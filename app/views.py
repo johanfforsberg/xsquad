@@ -3,6 +3,7 @@ import json
 from pprint import pprint
 from random import random
 from math import sqrt
+import time
 
 from flask import (redirect, url_for, request, jsonify,
                    send_from_directory, Response,
@@ -93,6 +94,8 @@ def get_state(gameid):
 def new_game():
     gameid = (max(map(int, games.keys())) + 1) if games else 0
     player = session["username"]
+    if not player:
+        return redirect(url_for('login'))
     level, walltypes = load_level("data/level.txt")
     level = Level((10, 14, 4), level, walltypes)
     game = Game(_id=gameid, level=level)
@@ -112,7 +115,9 @@ def get_fov(gameid):
     team = game.get_team(player)
     other_team = game.get_opponent(player)
     person = int(request.args.get("person", 0))
+    t0 = time.time()
     fov, enemies = game.get_team_fov(team)
+    print("team FOV took %.3f" % (time.time() - t0))
     disappeared = team.spotted[person] - set(enemies)
     if enemies or disappeared:
         for e in enemies:
@@ -216,7 +221,9 @@ def post_movepath(gameid):
     # verify that the path can be traversed by the member
     costs = member.check_path(game.level, path)
     if sum(costs, 0) <= member.moves:
+        t0 = time.time()
         start_fov, start_enemies = game.get_team_fov(team, exclude_members=[member_i])
+        print("team FOV took %.3f" % (time.time() - t0))
         fov_diffs = []
         enemy_diffs = []
         last_fov, last_enemies = game.get_fov(team, member_i)
@@ -323,7 +330,9 @@ def subscribe(gameid):
 def get_game(gameid):
     game = games.get(gameid)
     player = session.get("username")
-    if game and player:
+    if not player:
+        return redirect(url_for('login'))
+    if game:
         if game.waiting and player not in game.players:
             game.join(player)
             broadcast(gameid, game.active_player, {
@@ -333,7 +342,7 @@ def get_game(gameid):
                                team=game.players.index(player),
                                username=session["username"])
     else:
-        abort(403)
+        return redirect(url_for('new_game'))
 
 
 # warning: extremely primitive login handler ahead
