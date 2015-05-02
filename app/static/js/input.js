@@ -21,6 +21,8 @@ Input = (function (element, view) {
             element.addEventListener("mousemove", _onMousemove);
             element.addEventListener("mouseup", onMouseup);
             element.addEventListener("mouseout", onMouseOut);
+            element.addEventListener("mouseenter", onMouseIn);
+
             var leftbutton = event.which == 1,
                 middlebutton = event.which == 2,
                 rightbutton = event.which == 3;
@@ -58,6 +60,12 @@ Input = (function (element, view) {
 
             function onMouseOut (event) {
                 leaveCallback();
+            }
+
+            function onMouseIn (event) {
+                leftbutton = event.which == 1,
+                middlebutton = event.which == 2,
+                rightbutton = event.which == 3;
             }
         }
 
