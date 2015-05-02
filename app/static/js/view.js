@@ -384,8 +384,10 @@ View = (function () {
         }
     }
 
+    // callback for mouse hovering.
+    // We throttle it a bit because mouse movements can be fast.
     var _prevHoverPos;
-    var hoverCallback = throttle(function (x, y) {
+    var hoverCallback = _.throttle(function (x, y) {
         var pos = selectVisible(x, y);
         if (pos) {
             //var pos = key2point(target._key);
@@ -403,12 +405,16 @@ View = (function () {
                     if (member < 0 && enemy < 0)
                         runCallbacks("hoverPosition", pos);
                     else
+                        // in case the callback is debounced we must cancel
                         callbacks["hoverPosition"].forEach(
                             function (cb) {cb.cancel && cb.cancel()});
                     cursor.position.set(pos[0], pos[1], pos[2]);
                     scene.render();
                 } else {
                     cursor.visible = false;
+                    clearPath();
+                    callbacks["hoverPosition"].forEach(
+                        function (cb) {cb.cancel && cb.cancel()});
                     scene.render();
                 }
             }
@@ -416,11 +422,15 @@ View = (function () {
             cursor.visible = false;
             scene.render();
         }
-    }, 100, this);
+    }, 100);
 
     var leaveCallback = function () {
         console.log("leave")
         cursor.visible = false;
+        hoverCallback.cancel();  // must cancel since it's throttled and
+                                 // we don't want it to be called after we left
+        callbacks["hoverPosition"].forEach(    // likewise here, but debounced
+            function (cb) {cb.cancel && cb.cancel()});
         markPath();
         scene.render();
     }

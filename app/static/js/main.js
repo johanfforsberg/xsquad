@@ -147,6 +147,9 @@ window.addEventListener("load", function () {
         view.addCallback("clickPosition", positionClicked);
         view.addCallback("clickMember", memberClicked);
         view.addCallback("clickEnemy", enemyClicked);
+        // Debouncing because we want the path to be displayed when
+        // the player has hovered on a position for a little while,
+        // not immediately.
         view.addCallback("hoverPosition", _.debounce(showPath, 500));
 
         view.centerView(game.team.members[0].position, false);
