@@ -112,11 +112,12 @@ class Person(object):
             return costs
         return False
 
-    def _get_viewpoint(self):
+    @property
+    def viewpoint(self):
         return (self.position[0], self.position[1], self.position[2] + 1)
 
     def field_of_view(self, level):
-        return level.field_of_view(self._get_viewpoint(), self.vision)
+        return level.field_of_view(self.viewpoint, self.vision)
 
     def dbdict(self, public=False):
         if public:

@@ -14,7 +14,7 @@ from . import app
 # from .forms import LoginForm
 
 from .xsquad.level import Level
-from .xsquad.game import Game
+from .xsquad.game import Game, NotEnoughMovement, NotVisible
 from .xsquad.load import load_level
 
 # from models import games
@@ -147,7 +147,7 @@ def end_turn(gameid):
 
 
 @app.route('/games/<int:gameid>/shoot', methods=["POST"])
-def post_shot(gameid):
+def _post_shot(gameid):
     game = games[int(gameid)]
     if game.active_player != session["username"]:
         abort(403)
@@ -203,6 +203,40 @@ def post_shot(gameid):
                        attacker=attacker.dbdict(), target=target.dbdict(True))
 
     abort(403)
+
+
+@app.route('/games/<int:gameid>/shoot', methods=["POST"])
+def post_shot(gameid):
+    game = games[int(gameid)]
+    if game.active_player != session["username"]:
+        abort(403)
+    if game.over:
+        abort(403)
+
+    team = game.active_team
+    attacker = team.members[request.json["attacker"]]
+    opponent_team = game.inactive_team
+    target = opponent_team.members[request.json["target"]]
+
+    try:
+        hit = game.attack(team, attacker, opponent_team, target)
+    except (NotEnoughMovement, NotVisible):
+        abort(403)  # TODO: return something more helpful instead
+
+    broadcast(gameid, game.inactive_player,
+              {"type": "opponent_fired",
+               "data": {
+                   "attacker": attacker.dbdict(True),
+                   "target": target.dbdict(),
+                   "success": hit
+               }})
+
+    if opponent_team.eliminated:
+        broadcast(gameid, game.active_player, {"type": "game_won"})
+        broadcast(gameid, game.inactive_player, {"type": "game_lost"})
+
+    return jsonify(success=hit, kill=target.dead,
+                   attacker=attacker.dbdict(), target=target.dbdict(True))
 
 
 @app.route('/games/<int:gameid>/movepath', methods=["POST"])

@@ -1,6 +1,24 @@
+from math import sqrt
+from random import random
+
 from los import point2key
 from level import Level
 from team import Team
+
+
+ATTACK_MOVEMENT_COST = 25
+
+
+class GameError(Exception):
+    pass
+
+
+class NotVisible(GameError):
+    pass
+
+
+class NotEnoughMovement(GameError):
+    pass
 
 
 class Game(object):
@@ -117,6 +135,37 @@ class Game(object):
             return dict(_id=self._id, level=self.level.dbdict(),
                         players=self.players,
                         teams=[team.dbdict() for team in self.teams])
+
+    def attack(self, attacking_team, attacking_member,
+               target_team, target_member):
+
+        if attacking_member.moves < ATTACK_MOVEMENT_COST:
+            raise NotEnoughMovement()
+        attacking_member.moves -= ATTACK_MOVEMENT_COST
+
+        # check visibility
+        origin = attacking_member.viewpoint
+
+        lower_visibility = self.level.check_visibility(origin, target_member.position)
+        upper_visibility = self.level.check_visibility(origin, target_member.viewpoint)
+        visibility = lower_visibility + upper_visibility
+        if visibility == 0:
+            raise NotVisible()
+
+        # chance to hit
+        distance = sqrt((origin[0] - target_member.position[0])**2 +
+                        (origin[1] - target_member.position[1])**2 +
+                        (origin[2] - target_member.position[2]+0.5)**2)
+        chance = visibility / distance
+
+        # finally, check if the attack is successful
+        success = random() < chance
+        if success:
+            damage = 10 + round(10 * random())
+            target_member.health -= damage
+            return True
+        return False
+
 
     @classmethod
     def create(cls, dbdict):
