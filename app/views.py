@@ -1,8 +1,6 @@
 from collections import defaultdict
 import json
 from pprint import pprint
-from random import random
-from math import sqrt
 import time
 
 from flask import (redirect, url_for, request, jsonify,
@@ -78,7 +76,6 @@ def get_state(gameid):
 
     """
 
-    print "gameid", gameid
     game = games[int(gameid)]
     pprint(game)
     player = session["username"]
@@ -94,6 +91,7 @@ def get_state(gameid):
 
 @app.route('/games/new', methods=['GET'])
 def new_game():
+    "Start a new game, available for an opponent to join"
     gameid = (max(map(int, games.keys())) + 1) if games else 0
     player = session["username"]
     if not player:
@@ -132,6 +130,7 @@ def get_fov(gameid):
 
 @app.route('/games/<int:gameid>/done', methods=["POST"])
 def end_turn(gameid):
+    "Give the turn over to the opponent"
     game = games[gameid]
     team = game.active_team
     if game.active_player != session["username"]:
@@ -149,6 +148,7 @@ def end_turn(gameid):
 
 @app.route('/games/<int:gameid>/shoot', methods=["POST"])
 def post_shot(gameid):
+    "Attempt to fire at an enemy"
     game = games[int(gameid)]
     if game.active_player != session["username"]:
         abort(403)
