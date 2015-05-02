@@ -43,7 +43,7 @@ window.addEventListener("load", function () {
             console.log("my turn", this.props.my_turn);
             return React.createElement("div", {id: "hud"}, [
                 React.createElement("div", {id: "info"}, [
-                    username + "'s team:",
+                    username,
                     React.createElement(TeamComponent, {
                         selected: this.props.selectedMember,
                         members: this.props.team.members,
@@ -79,7 +79,7 @@ window.addEventListener("load", function () {
                     "div", {key: i,
                             className: ("member " + (self.props.selected === i? "selected" : "")),
                             onClick: function () {self.selectMember(i);}}, [
-                                React.createElement("div", {className: member.health <= 0? "dead" : "alive"},
+                                React.createElement("div", {className: "name " + (member.health <= 0? "dead" : "alive")},
                                                     "Name: " + member.name),
                                 React.createElement("div" , null, "Health:" + member.health +"/"+ member.maxhealth),
                                 React.createElement("div" , null, "Moves:" + member.moves +"/"+ member.speed)

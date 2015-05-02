@@ -27,14 +27,22 @@ body, html {
 }
 
 div.member {
+    padding: 3px;
     margin: 3px;
     color: green;
     border: 2px solid darkgreen;
+    font-size: smaller;
 }
 
 div.member.selected {
     color: #00ff00;
-    border: 2px solid green;
+    background: #005500;
+    border: 2px solid #00ee00;
+}
+
+div.member .name {
+    font-size: large;
+    font-weight: bold;
 }
 
 #enemies {
