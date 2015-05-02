@@ -196,8 +196,9 @@ window.addEventListener("load", function () {
         var member = game.team.members[game.selectedMember],
             startPos = member.position,
             path = graph.findPath(point2key(startPos), point2key(pos), member.moves);
-        if (path) {
-            var pointPath = path.map(key2point);
+        console.log(path);
+        if (path && path.points && path.cost <= member.moves) {
+            var pointPath = path.points.map(key2point);
             view.showPath("hover", pointPath);  // feels like reaching a bit too
                                                 // far into the view here...
         } else {
@@ -262,16 +263,19 @@ window.addEventListener("load", function () {
         var member = game.team.members[i];
         var path = graph.findPath(point2key(member.position),
                                   point2key(pos));
-        if (path) {
-            path = path.map(key2point);
+        if (path.points && path.cost < member.moves) {
+            path = path.points.map(key2point);
             moveAlongPath(parseInt(member.name), path, function (result) {
                 game.team = result.team;
-                if (result.path.length < path.length) {
-                    game.messages.push("Enemy spotted; stopping!");
+                var callback;
+                callback = function () {
+                    if (result.path.length < path.length)
+                        game.messages.push("Enemy spotted; stopping!");
+                    renderUI();
                 }
-                renderUI(result);
-                view.moveTeamMember(member.name, result.path,
-                                    result.fov_diffs, result.enemy_diffs, 500);
+                view.moveTeamMember(member.name, result.path, path,
+                                    result.fov_diffs, result.enemy_diffs, 500,
+                                    true, callback);
             });
         }
     }

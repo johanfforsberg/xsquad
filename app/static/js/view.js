@@ -464,7 +464,8 @@ View = (function () {
 
     // move the character along a path, animating and updating the FOV as we go
     var moving = false;
-    function moveTeamMember(team, j, path, fovDiffs, enemyDiffs, stepTime, showPath, callback) {
+    function moveTeamMember(team, j, path, pathToShow, fovDiffs, enemyDiffs, stepTime,
+                            showPath, callback) {
         console.log("moveTeamMember", j, path, fovDiffs, stepTime);
         var sprite = team.sprites[j];
         sprite.selected = false;
@@ -475,8 +476,9 @@ View = (function () {
 
         if (showPath) {
             clearPath("hover");
-            markPath("move", path);
-            var finalStep = path[path.length-1];
+            var visiblePath = pathToShow || path;
+            markPath("move", visiblePath);
+            var finalStep = visiblePath[visiblePath.length-1];
             cursor.visible = true;
             cursor.position.set(finalStep[0], finalStep[1], finalStep[2]);
         }
@@ -668,8 +670,8 @@ View = (function () {
         scene.render();
     };
 
-    View.prototype.moveTeamMember = function (n, path, fovs, enemies, t, cb) {
-        moveTeamMember(team, n, path, fovs, enemies, t, true, cb);
+    View.prototype.moveTeamMember = function (n, path, pathToShow, fovs, enemies, t, showPath, cb) {
+        moveTeamMember(team, n, path, pathToShow, fovs, enemies, t, true, cb);
     };
 
     View.prototype.moveEnemyMember = function (n, path, fovs, enemies, t, cb, hide) {
@@ -681,7 +683,7 @@ View = (function () {
             if (hide)
                 enemyTeam.hideMember(n);
         };
-        moveTeamMember(enemyTeam, n, path, fovs, enemies, t, false, callback);
+        moveTeamMember(enemyTeam, n, path, null, fovs, enemies, t, false, callback);
     };
 
     View.prototype.hideMember = function (name) {team.hideMember(name)};

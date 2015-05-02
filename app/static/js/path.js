@@ -94,9 +94,9 @@ PathGraph = (function () {
         return 2 * Math.sqrt(Math.pow(p1[0] - p2[0], 2) + Math.pow(p1[1] - p2[1], 2) + Math.pow(p1[2] - p2[2], 2));
     }
 
-    function findPath (start, goal, maxcost) {
+    function findPath (start, goal) {
 
-        console.log("findPath", key2point(start), key2point(goal), maxcost);
+        console.log("findPath", key2point(start), key2point(goal));
 
         var frontier = new PriorityQueue(
             {comparator: function (a, b) {return a.cost - b.cost;}});
@@ -105,19 +105,17 @@ PathGraph = (function () {
         cameFrom[start] = -1;
         var costSoFar = {};
         costSoFar[start] = 0;
-        var current, last, neighbors;
+        var current, last, neighbors, totalCost;
         var step = 0;
 
         while (frontier.length > 0 && step++ < 1000000) {
             current = frontier.dequeue();
             if (current.key == goal) {
-                console.log("there!");
+                totalCost = costSoFar[current.key];
                 break;
             }
-            //neighbors = getNeighbors(current.key, world, last);
             neighbors = this.graph[current.key];
 
-            // console.log("neighbors", key2point(current), neighbors);
             var newCost, next;
             neighbors.forEach(function (next, i) {
                 newCost = costSoFar[current.key] + next.cost;
@@ -131,8 +129,8 @@ PathGraph = (function () {
             last = current;
         }
 
-        if (current.key != goal || costSoFar[last.key] > maxcost) {
-            console.log("failed to find path");
+        // check if we were able to find a suitable path
+        if (current.key != goal) {
             return;
         }
 
@@ -144,9 +142,8 @@ PathGraph = (function () {
             path.unshift(current);
         }
 
-        if (path.length)
-            return path.slice(1);
-        return path;
+        if (path.length > 0 && totalCost)
+            return {points: path.slice(1), cost: totalCost};
     }
 
     function makePathGraph (world) {
