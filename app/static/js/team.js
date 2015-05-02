@@ -111,10 +111,8 @@ TeamView = (function () {
     };
 
     Team.prototype.isAnyoneAt = function (pos) {
-        console.log("isAnyoneAt", pos);
         for (var i=0; i < this.sprites.length; i++) {
             var mpos = this.sprites[i].position;
-            console.log(i, mpos);
             if (mpos.x === pos[0] && mpos.y === pos[1] && mpos.z === pos[2])
                 return i;
         }
