@@ -182,8 +182,7 @@ class Game(object):
         # verify that the path can actually be followed
         member = team.members[membername]
         costs = member.check_path(self.level, path)
-        total_cost = sum(costs)
-        if total_cost > member.moves:
+        if sum(costs) > member.moves:
             raise NotEnoughMovement()
 
         # calculate initial FOV
@@ -235,7 +234,7 @@ class Game(object):
             if stop_for_enemy and enemy_add:
                 break
 
-        member.moves -= total_cost
+        member.moves -= sum(costs[:i+1])
         enemies = set(last_enemies) | set(start_enemies)
         return MoveResult(path=path[:i+2], fov_diffs=fov_diffs,
                           enemy_diffs=enemy_diffs, enemies=enemies,
