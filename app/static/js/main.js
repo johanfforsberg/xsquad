@@ -374,7 +374,10 @@ window.addEventListener("load", function () {
                                (!msg.data.seen_at_end? " Moved out of sight." : ""));
             var paths = msg.data.paths;
             var enemy = msg.data.enemy;
-            game.enemies[enemy.name] = enemy;
+            if (msg.data.seen_at_end)
+                game.enemies[enemy.name] = enemy;
+            else
+                delete game.enemies[enemy.name];
             var i = 0;
             function showPath() {
                 if (i < paths.length) {
