@@ -79,9 +79,10 @@ window.addEventListener("load", function () {
                     "div", {key: i,
                             className: ("member " + (self.props.selected === i? "selected" : "")),
                             onClick: function () {self.selectMember(i);}}, [
-                    React.createElement("div", null, "Name: " + member.name),
-                    React.createElement("div" , null, "Health:" + member.health +"/"+ member.maxhealth),
-                    React.createElement("div" , null, "Moves:" + member.moves +"/"+ member.speed)
+                                React.createElement("div", {className: member.health <= 0? "dead" : "alive"},
+                                                    "Name: " + member.name),
+                                React.createElement("div" , null, "Health:" + member.health +"/"+ member.maxhealth),
+                                React.createElement("div" , null, "Moves:" + member.moves +"/"+ member.speed)
                 ]);
             });
             return React.createElement("div", null, members);
@@ -97,8 +98,9 @@ window.addEventListener("load", function () {
                 return React.createElement(
                     "div", {key: i, className: "enemy",
                             onClick: function () {enemySelected(i);}}, [
-                    React.createElement("div", null, "Name: " + enemy.name)
-                ]);
+                                React.createElement("div", {className: enemy.dead? "dead" : "alive"},
+                                                    "Name: " + enemy.name)
+                            ]);
             }, R.toPairs(this.props.enemies));
             return React.createElement("div", {id: "enemies"}, enemies);
         }
@@ -177,6 +179,7 @@ window.addEventListener("load", function () {
                     game.enemies[enemy.name] = enemy;
                 });
                 callback(data.fov, data.enemies);
+                renderUI();
             }
         });
     }
@@ -272,6 +275,10 @@ window.addEventListener("load", function () {
             dataType: "json",
             contentType: "application/json",
             data: JSON.stringify({person: member, path: path, rotation: directions}),
+            error: function (result) {
+                game.messages.push(member + " can't move there");
+                renderUI();
+            },
             success: function (result) {
                 game.enemies = {};
                 result.enemies.forEach(function (enemy) {
@@ -301,7 +308,9 @@ window.addEventListener("load", function () {
                 member = game.team.members[result.attacker.name];
                 console.log("attacker", member);
                 member.moves = result.attacker.moves;
-                enemy = game.enemies[result.target];
+                enemy = game.enemies[result.target.name];
+                enemy = game.enemies[result.target.name] = R.mixin(enemy, result.target);
+                view.updateEnemyTeam({members: [result.target]});
                 view.shotsFired(member, enemy, true);
                 renderUI();
             }});
@@ -317,7 +326,7 @@ window.addEventListener("load", function () {
     });
 
     source.addEventListener("error", function (e) {
-        console.log("SSE error!", e);
+        game.messages.push("*** Server error! ***")
     });
 
     source.addEventListener("message", function (e) {
@@ -358,7 +367,7 @@ window.addEventListener("load", function () {
                                (msg.data.success? " and hit!" : " but missed!"));
             var member = game.team.members[msg.data.target.name];
             member.health = msg.data.target.health;
-            var enemy = game.enemies[msg.data.attacker];
+            var enemy = game.enemies[msg.data.attacker.name];
             view.shotsFired(enemy, member, false);
             break;
         case "game_lost":

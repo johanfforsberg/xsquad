@@ -76,8 +76,8 @@ View = (function () {
                 tmp._sides = sidesArray;
                 walls[key] = tmp;
                 // var z;
-                // if (walls[point2key([point[0], point[1], point[2]-1])] &&
-                //     R.contains(5, sidesArray))
+                // if (levelData.walls[point2key([point[0], point[1], point[2]-1])] &&
+                //     R.contains(4, sidesArray))
                 //     z = point[2]-1;
                 // else
                 var z = point[2];
@@ -393,7 +393,7 @@ View = (function () {
                 _prevHoverPos = pos;
                 var key = point2key(pos);
                 var wall = walls[key];  //target._key];
-                if (R.contains(5, wall._sides)) {
+                if (wall && R.contains(5, wall._sides)) {
                     // console.log("hover valid position", pos[0], pos[1], pos[2]);
                     cursor.visible = true;
                     cursor.position.set(pos[0], pos[1], pos[2]);
@@ -622,6 +622,10 @@ View = (function () {
         }
     };
 
+    View.prototype.updateEnemyTeam = function (teamData) {
+        enemyTeam.update(teamData);
+    };
+
     View.prototype.selectTeamMember = function (i) {
         team.select(i);
 
@@ -647,6 +651,8 @@ View = (function () {
         };
         moveTeamMember(enemyTeam, n, path, fovs, enemies, t, false, callback);
     };
+
+    View.prototype.hideMember = function (name) {team.hideMember(name)};
 
     View.prototype.getSelectedTeamMember = function () {return team.selected;};
 

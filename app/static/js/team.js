@@ -62,9 +62,14 @@ TeamView = (function () {
         console.log("Team update", teamData);
         teamData.members.forEach(function (member) {
             var sprite = this.sprites[parseInt(member.name)];
-            sprite.position.set(member.position[0], member.position[1], member.position[2]);
-            sprite.rotation = member.rotation;
-            sprite.dead = member.health <= 0;
+            if (R.has("position", member))
+                sprite.position.set(member.position[0], member.position[1], member.position[2]);
+            if (R.has("rotation", member))
+                sprite.rotation = member.rotation;
+            if (R.has("health", member))
+                sprite.dead = member.health <= 0;
+            else
+                sprite.dead = member.dead
         }, this);
     };
 

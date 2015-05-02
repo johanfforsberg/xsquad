@@ -85,7 +85,8 @@ def get_state(gameid):
     data = game.dbdict(player)
     # enemies = [game.inactive_team.people[i].position
     #            for i in team.enemies_seen()]
-    enemies = {i: game.inactive_team.people[i] for i in team.enemies_seen()}
+    enemies = {i: game.inactive_team.people[i].dbdict(True)
+               for i in team.enemies_seen()}
     data["enemies"] = enemies
     return jsonify(data)
 
@@ -125,7 +126,7 @@ def get_fov(gameid):
         for e in disappeared:
             other_team.spotted[e].remove(person)
         team.spotted[person] = set(enemies)
-    return jsonify({"fov": fov, "enemies": [e.dbdict() for e in enemies]})
+    return jsonify({"fov": fov, "enemies": [e.dbdict(True) for e in enemies]})
 
 
 @app.route('/games/<int:gameid>/done', methods=["POST"])
@@ -133,6 +134,8 @@ def end_turn(gameid):
     game = games[gameid]
     team = game.active_team
     if game.active_player != session["username"]:
+        abort(403)
+    if game.over:
         abort(403)
     print "turn end"
     success = game.end_turn(session["username"])
@@ -147,6 +150,8 @@ def end_turn(gameid):
 def post_shot(gameid):
     game = games[int(gameid)]
     if game.active_player != session["username"]:
+        abort(403)
+    if game.over:
         abort(403)
     team = game.active_team
     opponent_team = game.inactive_team
@@ -184,7 +189,7 @@ def post_shot(gameid):
 
         broadcast(gameid, game.inactive_player, {"type": "opponent_fired",
                                                  "data": {
-                                                     "attacker": attacker.name,
+                                                     "attacker": attacker.dbdict(True),
                                                      "target": target.dbdict(),
                                                      "success": hit
                                                  }})
@@ -194,7 +199,8 @@ def post_shot(gameid):
             broadcast(gameid, game.active_player, {"type": "game_won"})
             broadcast(gameid, game.inactive_player, {"type": "game_lost"})
 
-        return jsonify(success=hit, attacker=attacker.dbdict(), target=target.name)
+        return jsonify(success=hit, kill=target.dead,
+                       attacker=attacker.dbdict(), target=target.dbdict(True))
 
     abort(403)
 
@@ -209,6 +215,8 @@ def post_movepath(gameid):
     """
     game = games[int(gameid)]
     if game.active_player != session["username"]:
+        abort(403)
+    if game.over:
         abort(403)
     team = game.active_team
 

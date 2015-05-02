@@ -50,6 +50,10 @@ div.enemy {
     border: 2px solid darkred;
 }
 
+.dead {
+    text-decoration: line-through;
+}
+
 div.turn {
     color: white;
 }

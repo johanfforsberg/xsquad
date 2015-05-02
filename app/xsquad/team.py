@@ -118,7 +118,10 @@ class Person(object):
     def field_of_view(self, level):
         return level.field_of_view(self._get_viewpoint(), self.vision)
 
-    def dbdict(self):
+    def dbdict(self, public=False):
+        if public:
+            return dict(name=self.name, position=self.position,
+                        rotation=self.rotation, dead=self.dead)
         return dict(name=self.name, health=self.health,
                     maxhealth=self.maxhealth, position=self.position,
                     rotation=self.rotation, speed=self.speed,
@@ -179,6 +182,6 @@ class Team(object):
         for person in self.members:
             person.reset()
 
-    def dbdict(self):
+    def dbdict(self, public=False):
         return dict(player=self.player,
-                    members=[p.dbdict() for p in self.members])
+                    members=[p.dbdict(public) for p in self.members])
