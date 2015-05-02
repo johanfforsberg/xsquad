@@ -15,6 +15,7 @@ from . import app
 
 from .xsquad.level import Level
 from .xsquad.game import Game, NotEnoughMovement, NotVisible
+from .xsquad.team import BadPath
 from .xsquad.load import load_level
 
 # from models import games
@@ -147,65 +148,6 @@ def end_turn(gameid):
 
 
 @app.route('/games/<int:gameid>/shoot', methods=["POST"])
-def _post_shot(gameid):
-    game = games[int(gameid)]
-    if game.active_player != session["username"]:
-        abort(403)
-    if game.over:
-        abort(403)
-    team = game.active_team
-    opponent_team = game.inactive_team
-
-    attacker_i = request.json["attacker"]
-    attacker = team.members[attacker_i]
-    if attacker.moves < 25:
-        abort(403)
-
-    target_i = request.json["target"]
-    target = opponent_team.members[target_i]
-
-    print attacker_i, "fires at", target_i
-
-    attacker.moves -= 25
-
-    # simple chance-to-hit calculation based on visibility and distance
-    origin = (attacker.position[0], attacker.position[1],
-              attacker.position[2]+1)
-    lower_visibility = game.level.check_visibility(origin, target.position)
-    upper_target = (target.position[0], target.position[1],
-                    target.position[2]+1)
-    upper_visibility = game.level.check_visibility(origin, upper_target)
-
-    if lower_visibility or upper_visibility:
-        distance = sqrt((origin[0] - upper_target[0])**2 +
-                        (origin[1] - upper_target[1])**2 +
-                        (origin[2] - upper_target[2]-0.5)**2)
-        chance = ((lower_visibility + upper_visibility) / 2.0) / sqrt(distance)
-        print "Distance:", distance
-        print "Chance to hit:", chance
-        hit = random() < chance
-        if hit:
-            target.health -= 10 + round(10 * random())
-
-        broadcast(gameid, game.inactive_player, {"type": "opponent_fired",
-                                                 "data": {
-                                                     "attacker": attacker.dbdict(True),
-                                                     "target": target.dbdict(),
-                                                     "success": hit
-                                                 }})
-
-        if opponent_team.eliminated:
-            print("game over; %s won!" % game.active_player)
-            broadcast(gameid, game.active_player, {"type": "game_won"})
-            broadcast(gameid, game.inactive_player, {"type": "game_lost"})
-
-        return jsonify(success=hit, kill=target.dead,
-                       attacker=attacker.dbdict(), target=target.dbdict(True))
-
-    abort(403)
-
-
-@app.route('/games/<int:gameid>/shoot', methods=["POST"])
 def post_shot(gameid):
     game = games[int(gameid)]
     if game.active_player != session["username"]:
@@ -254,81 +196,31 @@ def post_movepath(gameid):
         abort(403)
     team = game.active_team
 
-    member_i = request.json.get("person", 0)
-    member = team.members[member_i]
+    membername = request.json.get("person", 0)
     path = request.json["path"]
     rotation = request.json["rotation"]
     stop_for_enemy = not request.json.get("dont_stop")
 
-    # verify that the path can be traversed by the member
-    costs = member.check_path(game.level, path)
-    if sum(costs, 0) <= member.moves:
-        t0 = time.time()
-        start_fov, start_enemies = game.get_team_fov(team, exclude_members=[member_i])
-        print("team FOV took %.3f" % (time.time() - t0))
-        fov_diffs = []
-        enemy_diffs = []
-        last_fov, last_enemies = game.get_fov(team, member_i)
-        seen_paths = []
-        if last_enemies:
-            seen_paths.append([path[0]])
-        seen_at_end = False
-        last_pos = path[0]
-        for i, (pos, rot) in enumerate(zip(path[1:], rotation)):
-            member.position = pos
-            member.rotation = rot
+    # let's try to perform the movement
+    try:
+        result = game.movement(team, membername, path, rotation, stop_for_enemy)
+    except (NotEnoughMovement, BadPath):
+        abort(403)  # TODO: be more helpful here
 
-            fov, enemies = game.get_fov(team, member_i)
+    if result.seen_paths:  # update opponent about movements in vicinity
+        member = team.members[membername]
+        broadcast(gameid, game.inactive_player,
+                  {"type": "opponent_visible",
+                   "data": {"enemy": member.dbdict(True),
+                            "paths": result.seen_paths,  # the movement seen
+                            "seen_at_end": result.seen_at_end}})
 
-            # calculate the positions that are newly visible / no longer visible
-            fov_add = dict((key, sides) for key, sides in fov.items()
-                           if key not in last_fov and key not in start_fov)
-            fov_remove = dict((key, sides) for key, sides in last_fov.items()
-                              if key not in fov and key not in start_fov)
-            fov_diffs.append([fov_add, fov_remove])
-            last_fov = fov
-
-            # same thing for enemies
-            enemy_add = [e.dbdict() for e in enemies
-                         if e not in last_enemies and e not in start_enemies]
-            enemy_remove = [e.dbdict() for e in last_enemies
-                            if e not in enemies and e not in start_enemies]
-            enemy_diffs.append([enemy_add, enemy_remove])
-
-            # store visibility information for opponent
-            if enemies:
-                if last_enemies:
-                    seen_paths[-1].append(pos)
-                else:
-                    seen_paths.append([last_pos, pos])
-                seen_at_end = True
-            else:
-                if last_enemies:
-                    seen_paths[-1].append(pos)
-                seen_at_end = False
-
-            last_enemies = enemies
-            last_pos = pos
-
-            if stop_for_enemy and enemy_add:  # break early if enemies seen
-                break
-
-        member.moves -= sum(costs)
-        if seen_paths:  # update opponent about movements in vicinity
-            broadcast(gameid, game.inactive_player,
-                      {"type": "opponent_visible",
-                       "data": {"enemy": member.dbdict(),  # TODO: restrict info
-                                "paths": seen_paths,  # the movement seen
-                                "seen_at_end": seen_at_end}})  # visible at end of move?
-
-        # return the actual path - which is always a subset of the one asked
-        # for (may change) - the FOV updates and any enemies that were spotted
-        return jsonify(dict(path=path[:i+2], team=team.dbdict(),
-                            fov_diffs=fov_diffs, enemy_diffs=enemy_diffs,
-                            enemies=[e.dbdict() for e in (
-                                set(last_enemies) | set(start_enemies))]))
-    else:
-        abort(403)
+    # return the actual path - which is always a subset of the one asked
+    # for (may change) - the FOV updates and any enemies that were spotted
+    return jsonify(dict(path=result.path, team=team.dbdict(),
+                        fov_diffs=result.fov_diffs,
+                        enemy_diffs=result.enemy_diffs,
+                        enemies=[e.dbdict(True) for e in result.enemies]))
 
 
 def make_sse(data):

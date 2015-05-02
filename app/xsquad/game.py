@@ -1,3 +1,4 @@
+from collections import namedtuple
 from math import sqrt
 from random import random
 
@@ -19,6 +20,11 @@ class NotVisible(GameError):
 
 class NotEnoughMovement(GameError):
     pass
+
+
+MoveResult = namedtuple(
+    'MoveResult', ['path', 'fov_diffs', 'enemy_diffs', 'enemies',
+                   'seen_paths', 'seen_at_end'])
 
 
 class Game(object):
@@ -166,6 +172,74 @@ class Game(object):
             return True
         return False
 
+    def movement(self, team, membername, path, rotation, stop_for_enemy=False):
+        """(Try to) move a team member along the given path and rotation.
+        Optionally stop at the first sight of an enemy.
+        Return a list of FOV differences for each step, and information
+        about any enemies seen.
+        """
+
+        # verify that the path can actually be followed
+        member = team.members[membername]
+        costs = member.check_path(self.level, path)
+        total_cost = sum(costs)
+        if total_cost > member.moves:
+            raise NotEnoughMovement()
+
+        # calculate initial FOV
+        start_fov, start_enemies = self.get_team_fov(
+            team, exclude_members=(membername,))
+        fov_diffs, enemy_diffs = [], []
+        last_fov, last_enemies = self.get_fov(team, membername)
+        seen_paths = []
+        if last_enemies:
+            seen_paths.append([path[0]])
+
+        # go through the path step by step
+        last_pos = path[0]
+        for i, (pos, rot) in enumerate(zip(path[1:], rotation)):
+            member.position, member.rotation = pos, rot
+            fov, enemies = self.get_fov(team, membername)
+
+            # calculate the positions that are newly / no longer visible
+            fov_add = dict((key, sides) for key, sides in fov.items()
+                           if (key not in last_fov) and (key not in start_fov))
+            fov_remove = dict((key, sides) for key, sides in last_fov.items()
+                              if (key not in fov) and (key not in start_fov))
+            fov_diffs.append([fov_add, fov_remove])
+            last_fov = fov
+
+            # same thing for enemies
+            enemy_add = [e.dbdict() for e in enemies
+                         if e not in last_enemies and e not in start_enemies]
+            enemy_remove = [e.dbdict() for e in last_enemies
+                            if (e not in enemies) and (e not in start_enemies)]
+            enemy_diffs.append([enemy_add, enemy_remove])
+
+            # store visibility information for opponent
+            if enemies:
+                if last_enemies:
+                    seen_paths[-1].append(pos)
+                else:
+                    seen_paths.append([last_pos, pos])
+                seen_at_end = True
+            else:
+                if last_enemies:
+                    seen_paths[-1].append(pos)
+                seen_at_end = False
+
+            # remember enemy status for next step
+            last_enemies = enemies
+            last_pos = pos
+
+            if stop_for_enemy and enemy_add:
+                break
+
+        member.moves -= total_cost
+        enemies = set(last_enemies) | set(start_enemies)
+        return MoveResult(path=path[:i+2], fov_diffs=fov_diffs,
+                          enemy_diffs=enemy_diffs, enemies=enemies,
+                          seen_paths=seen_paths, seen_at_end=seen_at_end)
 
     @classmethod
     def create(cls, dbdict):

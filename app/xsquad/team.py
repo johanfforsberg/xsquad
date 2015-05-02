@@ -3,6 +3,9 @@ from collections import defaultdict
 from random import randint
 
 
+class BadPath(Exception):
+    pass
+
 # def get_neighbors(pos, level):
 #     x, y = pos
 #     neighbors = []
