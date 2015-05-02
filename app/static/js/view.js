@@ -252,23 +252,6 @@ View = (function () {
 
     var cursor = makeCursor(4, 0.6, 0xFFFF00);
 
-
-    // create a line connecting the given path
-    function makePathMarker(path) {
-        var material = new THREE.LineDashedMaterial(
-            { color: 0xffff55, linewidth: 3, dashSize: 2, gapSize: 1 });
-        var geometry = new THREE.Geometry();
-        path.forEach(function (step) {
-            var point = step;
-            geometry.vertices.push(
-                new THREE.Vector3(point[0], point[1], point[2]-0.49)
-            );
-        });
-        var line = new THREE.Line( geometry, material, THREE.LineStrip );
-        return line;
-    }
-
-
     /* setup user input */
 
     function panCallback(dx, dy) {
@@ -351,7 +334,6 @@ View = (function () {
         }
     };
 
-    var pathMarker;
     function clickCallback(x, y) {
         console.log("clickCallback", x, y);
         // first check if the mouse click actually hit anything on the map
@@ -392,7 +374,6 @@ View = (function () {
         if (pos) {
             //var pos = key2point(target._key);
             if (!R.eqDeep(pos, _prevHoverPos)) {
-                console.log("changed pos", pos, _prevHoverPos);
                 _prevHoverPos = pos;
                 var key = point2key(pos);
                 var wall = walls[key];  //target._key];
@@ -401,7 +382,7 @@ View = (function () {
                     cursor.visible = true;
                     var member = team.isAnyoneAt(pos);
                     var enemy = enemyTeam.isAnyoneAt(pos);
-                    clearPath();
+                    clearPath("hover");
                     if (member < 0 && enemy < 0)
                         runCallbacks("hoverPosition", pos);
                     else
@@ -412,7 +393,7 @@ View = (function () {
                     scene.render();
                 } else {
                     cursor.visible = false;
-                    clearPath();
+                    clearPath("hover");
                     callbacks["hoverPosition"].forEach(
                         function (cb) {cb.cancel && cb.cancel()});
                     scene.render();
@@ -420,7 +401,11 @@ View = (function () {
             }
         } else {
             cursor.visible = false;
+            clearPath("hover")
+            callbacks["hoverPosition"].forEach(
+                function (cb) {cb.cancel && cb.cancel()});
             scene.render();
+            _prevHoverPos = null;
         }
     }, 100);
 
@@ -431,7 +416,7 @@ View = (function () {
                                  // we don't want it to be called after we left
         callbacks["hoverPosition"].forEach(    // likewise here, but debounced
             function (cb) {cb.cancel && cb.cancel()});
-        markPath();
+        clearPath("hover");
         scene.render();
     }
 
@@ -445,23 +430,40 @@ View = (function () {
         }
     }
 
-    function clearPath() {
-        if (pathMarker)
-            scene.remove(pathMarker);
+    // create a line connecting the given path
+    function makePathMarker(path, color) {
+        var material = new THREE.LineDashedMaterial(
+            { color: color, linewidth: 3, dashSize: 2, gapSize: 1 });
+        var geometry = new THREE.Geometry();
+        path.forEach(function (step) {
+            var point = step;
+            geometry.vertices.push(
+                new THREE.Vector3(point[0], point[1], point[2]-0.49)
+            );
+        });
+        var line = new THREE.Line( geometry, material, THREE.LineStrip );
+        return line;
     }
 
-    function markPath(path) {
-        if (pathMarker) {
-            scene.remove(pathMarker);
+    var pathMarkers = {};
+    function clearPath(name) {
+        if (pathMarkers[name])
+            scene.remove(pathMarkers[name]);
+    }
+
+    function markPath(name, path) {
+        if (pathMarkers[name]) {
+            scene.remove(pathMarkers[name]);
         }
         if (path) {
-            pathMarker = makePathMarker(path);
-            scene.add(pathMarker);
+            pathMarkers[name] = makePathMarker(path, name == "move"? 0x00ff00 : 0xffff55);
+            scene.add(pathMarkers[name]);
         }
         scene.render();
     }
 
     // move the character along a path, animating and updating the FOV as we go
+    var moving = false;
     function moveTeamMember(team, j, path, fovDiffs, enemyDiffs, stepTime, showPath, callback) {
         console.log("moveTeamMember", j, path, fovDiffs, stepTime);
         var sprite = team.sprites[j];
@@ -469,9 +471,11 @@ View = (function () {
         //path = path.map(key2point);
         var directions = R.zipWith(getDirection, path, path.slice(1));
         var i = 0, fov;
+        moving = true;
 
         if (showPath) {
-            markPath(path);
+            clearPath("hover");
+            markPath("move", path);
             var finalStep = path[path.length-1];
             cursor.visible = true;
             cursor.position.set(finalStep[0], finalStep[1], finalStep[2]);
@@ -511,11 +515,12 @@ View = (function () {
                             takeStep(to, path[i+1], directions[i]);  // next step
                         } else {
                             // we're there!
-                            scene.remove(pathMarker);
+                            clearPath("move");
                             cursor.visible = false;
                             sprite.selected = true;
                             sprite.frame = 2;
                             callback && callback();
+                            moving = false;
                         }
                     })
                 .to({x: to[0], y: to[1], z: to[2]}, stepTime)

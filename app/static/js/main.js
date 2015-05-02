@@ -193,13 +193,15 @@ window.addEventListener("load", function () {
     function showPath(pos) {
         if (game.selectedMember == undefined)
             return;
-        var startPos = game.team.members[game.selectedMember].position;
-        var path = graph.findPath(point2key(startPos), point2key(pos));
+        var member = game.team.members[game.selectedMember],
+            startPos = member.position,
+            path = graph.findPath(point2key(startPos), point2key(pos), member.moves);
         if (path) {
             var pointPath = path.map(key2point);
-            view.showPath(pointPath);
+            view.showPath("hover", pointPath);  // feels like reaching a bit too
+                                                // far into the view here...
         } else {
-            view.showPath();
+            view.showPath("hover");
         }
     }
 

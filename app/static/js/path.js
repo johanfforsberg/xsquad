@@ -94,9 +94,9 @@ PathGraph = (function () {
         return 2 * Math.sqrt(Math.pow(p1[0] - p2[0], 2) + Math.pow(p1[1] - p2[1], 2) + Math.pow(p1[2] - p2[2], 2));
     }
 
-    function findPath (start, goal) {
+    function findPath (start, goal, maxcost) {
 
-        console.log("findPath", key2point(start), key2point(goal));
+        console.log("findPath", key2point(start), key2point(goal), maxcost);
 
         var frontier = new PriorityQueue(
             {comparator: function (a, b) {return a.cost - b.cost;}});
@@ -131,7 +131,7 @@ PathGraph = (function () {
             last = current;
         }
 
-        if (current.key !=  goal) {
+        if (current.key != goal || costSoFar[last.key] > maxcost) {
             console.log("failed to find path");
             return;
         }
