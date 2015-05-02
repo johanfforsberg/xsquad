@@ -31,9 +31,6 @@ window.addEventListener("load", function () {
     var gameId = document.getElementById("game-id").value;
     var username = document.getElementById("username").value;
 
-    // the isometric game view
-    var view = new View(document.getElementById("view"));
-
 
     /* React.js UI components */
 
@@ -123,6 +120,7 @@ window.addEventListener("load", function () {
 
 
     var game;  // this is where all the game state is kept!
+    var view;  // The isometric 3d view
     var graph;  // handle the path graph for movement
 
     // Kick it all into action after fetching the current game state
@@ -140,7 +138,8 @@ window.addEventListener("load", function () {
         graph = new PathGraph(game.level.graph);
         console.log("graph", graph);
 
-        renderUI();
+        // the isometric game view
+        view = new View(document.getElementById("view"));
 
         view.makeWorld(game.level);
         view.updateTeam(game.team);
@@ -148,6 +147,7 @@ window.addEventListener("load", function () {
         view.addCallback("clickPosition", positionClicked);
         view.addCallback("clickMember", memberClicked);
         view.addCallback("clickEnemy", enemyClicked);
+        view.addCallback("hoverPosition", _.debounce(showPath, 500));
 
         view.centerView(game.team.members[0].position, false);
 
@@ -157,6 +157,7 @@ window.addEventListener("load", function () {
         // we're waiting for the textures to load before asking the server
         // for the field-of-view. This should be more parallell-y.
 
+        renderUI();
     }
 
     // render the overlay "HUD"
@@ -185,6 +186,19 @@ window.addEventListener("load", function () {
     }
 
     // Callbacks for various interactions
+
+    function showPath(pos) {
+        if (game.selectedMember == undefined)
+            return;
+        var startPos = game.team.members[game.selectedMember].position;
+        var path = graph.findPath(point2key(startPos), point2key(pos));
+        if (path) {
+            var pointPath = path.map(key2point);
+            view.showPath(pointPath);
+        } else {
+            view.showPath();
+        }
+    }
 
     function memberClicked(i, center) {
         var member = game.team.members[i];
@@ -230,7 +244,7 @@ window.addEventListener("load", function () {
         $.ajax(gameId + "/done", {
             type: "POST",
             success: function (data) {
-                game = R.mixin(game, data);
+                game = R.merge(game, data);
                 game.messages.push("Waiting for opponent...");
                 renderUI();
             }
@@ -309,7 +323,7 @@ window.addEventListener("load", function () {
                 console.log("attacker", member);
                 member.moves = result.attacker.moves;
                 enemy = game.enemies[result.target.name];
-                enemy = game.enemies[result.target.name] = R.mixin(enemy, result.target);
+                enemy = game.enemies[result.target.name] = R.merge(enemy, result.target);
                 view.updateEnemyTeam({members: [result.target]});
                 view.shotsFired(member, enemy, true);
                 renderUI();

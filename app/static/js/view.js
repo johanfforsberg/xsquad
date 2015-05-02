@@ -385,17 +385,26 @@ View = (function () {
     }
 
     var _prevHoverPos;
-    var hoverCallback = function (x, y) {
+    var hoverCallback = throttle(function (x, y) {
         var pos = selectVisible(x, y);
         if (pos) {
             //var pos = key2point(target._key);
-            if (pos != _prevHoverPos) {
+            if (!R.eqDeep(pos, _prevHoverPos)) {
+                console.log("changed pos", pos, _prevHoverPos);
                 _prevHoverPos = pos;
                 var key = point2key(pos);
                 var wall = walls[key];  //target._key];
                 if (wall && R.contains(5, wall._sides)) {
                     // console.log("hover valid position", pos[0], pos[1], pos[2]);
                     cursor.visible = true;
+                    var member = team.isAnyoneAt(pos);
+                    var enemy = enemyTeam.isAnyoneAt(pos);
+                    clearPath();
+                    if (member < 0 && enemy < 0)
+                        runCallbacks("hoverPosition", pos);
+                    else
+                        callbacks["hoverPosition"].forEach(
+                            function (cb) {cb.cancel && cb.cancel()});
                     cursor.position.set(pos[0], pos[1], pos[2]);
                     scene.render();
                 } else {
@@ -407,11 +416,12 @@ View = (function () {
             cursor.visible = false;
             scene.render();
         }
-    }  //, 100, this);
+    }, 100, this);
 
     var leaveCallback = function () {
         console.log("leave")
         cursor.visible = false;
+        markPath();
         scene.render();
     }
 
@@ -425,6 +435,11 @@ View = (function () {
         }
     }
 
+    function clearPath() {
+        if (pathMarker)
+            scene.remove(pathMarker);
+    }
+
     function markPath(path) {
         if (pathMarker) {
             scene.remove(pathMarker);
@@ -433,8 +448,8 @@ View = (function () {
             pathMarker = makePathMarker(path);
             scene.add(pathMarker);
         }
+        scene.render();
     }
-
 
     // move the character along a path, animating and updating the FOV as we go
     function moveTeamMember(team, j, path, fovDiffs, enemyDiffs, stepTime, showPath, callback) {
@@ -562,10 +577,12 @@ View = (function () {
     }
 
     var callbacks = {};  // store callbacks
+    var graph;
 
     // main constructor
-    function View (element) {
+    function View (element, _graph) {
         scene = new Scene(element, 10, 60, 45);
+        graph = _graph;
 
         cursor.visible = false;
         scene.add(cursor);
@@ -662,6 +679,8 @@ View = (function () {
     View.prototype.decreaseLevelDisplayMax = function () {setLevelDisplayMax(levelDisplayMax-1);};
 
     View.prototype.centerView = centerView;
+
+    View.prototype.showPath = markPath;
 
     return View;
 
