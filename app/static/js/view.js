@@ -649,6 +649,9 @@ View = (function () {
                 scene.turn, true);
 
             scene.add(enemyTeam.obj);
+            // Need to update the sprites if the camera rotates, since
+            // they always must face the camera. There is probably a more
+            // efficient way to do this (look into how THREE implements sprites.)
             scene.addCallback("turn", function (turn) {
                 team.setTurn(turn);
                 enemyTeam.setTurn(turn);

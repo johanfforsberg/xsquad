@@ -1,3 +1,9 @@
+/*
+The scene is where the view is actually rendered. It's really a thin layer
+on top of a THREE.js scene and keeps track of camera movements, adding and
+removing things, and interactions.
+*/
+
 function Scene (element, scale, turn, pitch) {
 
     var width = element.offsetWidth, height = element.offsetHeight;
@@ -11,10 +17,7 @@ function Scene (element, scale, turn, pitch) {
 
     this.reinit = function () {
         width = element.offsetWidth, height = element.offsetHeight;
-        // element.removeChild(renderer.domElement);
-        // renderer = new THREE.WebGLRenderer();
         renderer.setSize( width, height );
-        // element.appendChild( renderer.domElement );
         aspect = width / height;
 
         camera.left = -scale;
@@ -45,8 +48,8 @@ function Scene (element, scale, turn, pitch) {
     camera.position.z = 100;
     boom.add(camera);
 
-    var camlight = this.camlight = new THREE.DirectionalLight(0xffffff, 0.1);
-    camlight.position = camera.position;
+    // var camlight = this.camlight = new THREE.DirectionalLight(0xffffff, 0.1);
+    // camlight.position = camera.position;
     // camera.add(camlight);
 
     var light = new THREE.AmbientLight( 0x707070 );
@@ -55,8 +58,6 @@ function Scene (element, scale, turn, pitch) {
     var skyLight = new THREE.DirectionalLight(0xffffff, 0.1);
     skyLight.position.set(70, 50, 200);
     scene.add(skyLight);
-
-    var rendering = false;
 
     // this is the render loop. It will always run, but does nothing unless
     // something has changed. In that case it re-renders the scene.
@@ -85,15 +86,14 @@ function Scene (element, scale, turn, pitch) {
     };
 
 
-    var sprites = [];  // keep track of sprites as they need to be rotated with the scene
-                       // TODO: sophisticate this
-
     this.add = function (obj) {
         this.scene.add(obj);
+        render();
     };
 
     this.remove = function (obj) {
         this.scene.remove(obj);
+        render();
     };
 
     var callbacks = {};
@@ -114,9 +114,6 @@ function Scene (element, scale, turn, pitch) {
                 turn = value % 360;
             }
             table.rotation.y = -turn / 180 * Math.PI;
-            // sprites.forEach(function (sprite) {  // sprites always face the camera
-            //     sprite.setTurn(turn);
-            // });
             var turnCallbacks = callbacks["turn"];
             if (turnCallbacks)
                 turnCallbacks.forEach(function (cb) {cb(turn);});
