@@ -31,94 +31,6 @@ window.addEventListener("load", function () {
     var gameId = document.getElementById("game-id").value;
     var username = document.getElementById("username").value;
 
-
-    /* React.js UI components */
-
-    var OverlayComponent = React.createClass({
-
-        render: function () {
-            console.log("my turn", this.props.my_turn);
-            return React.createElement("div", {id: "hud"}, [
-                React.createElement("div", {id: "info"}, [
-                    username,
-                    React.createElement(TeamComponent, {
-                        selected: this.props.selectedMember,
-                        members: this.props.team.members,
-                        pathGraph: this.props.level.graph
-                    }),
-                    React.createElement("div", {className: "turn"},
-                                        this.props.players.length < 2? "Waiting for an opponent." :
-                                        (this.props.my_turn? "Your turn!" : "Opponent's turn")),
-                    React.createElement("button", {
-                        disabled: !this.props.my_turn,
-                        onClick: endTurn}, "End Turn")
-                ]),
-                this.props.enemies? React.createElement(EnemiesComponent, {
-                    player: this.props.players[1],
-                    enemies: this.props.enemies
-                }): null,
-                React.createElement(MessageComponent, {messages: this.props.messages})
-            ]);
-        }
-
-    });
-
-    var TeamComponent = React.createClass({
-
-        selectMember: function (n) {
-            memberClicked(n, n == this.props.selected);
-        },
-
-        render: function () {
-            var self = this;
-            var members = this.props.members.map(function (member, i) {
-                return React.createElement(
-                    "div", {key: i,
-                            className: ("member " + (self.props.selected === i? "selected" : "")),
-                            onClick: function () {self.selectMember(i);}}, [
-                                React.createElement("div", {className: "name " + (member.health <= 0? "dead" : "alive")},
-                                                    "Name: " + member.name),
-                                React.createElement("div" , null, "Health:" + member.health +"/"+ member.maxhealth),
-                                React.createElement("div" , null, "Moves:" + member.moves +"/"+ member.speed)
-                ]);
-            });
-            return React.createElement("div", null, members);
-        }
-    });
-
-    var EnemiesComponent = React.createClass({
-
-        render: function () {
-            var enemies = R.map(function (pair) {
-                var i = pair[0];
-                var enemy = pair[1];
-                return React.createElement(
-                    "div", {key: i, className: "enemy",
-                            onClick: function () {enemySelected(i);}}, [
-                                React.createElement("div", {className: enemy.dead? "dead" : "alive"},
-                                                    "Name: " + enemy.name)
-                            ]);
-            }, R.toPairs(this.props.enemies));
-            return React.createElement("div", {id: "enemies"}, enemies);
-        }
-    });
-
-    var MessageComponent = React.createClass({
-
-        render: function () {
-            var messages = R.take(5, R.reverse(this.props.messages)).map(function (msg, i) {
-                return React.createElement(
-                    "div", {key: i, className: "message " + (i == 0? "latest": "old")}, msg);
-            })
-            //console.log("MessageComponent", this.props.messages);
-            return React.createElement("div", {id: "messages"}, messages);
-        }
-
-    });
-
-    /* end React.js stuff */
-
-
     var game;  // this is where all the game state is kept!
     var view;  // The isometric 3d view
     var graph;  // handle the path graph for movement
@@ -166,7 +78,10 @@ window.addEventListener("load", function () {
     // render the overlay "HUD"
     function renderUI () {
         React.render(
-            React.createElement(OverlayComponent, game),
+            React.createElement(UI.OverlayComponent, {username: username,
+                                                      game: game, endTurn: endTurn,
+                                                      memberClicked: memberClicked,
+                                                      enemySelected: enemySelected}),
             document.getElementById("overlay")
         );
     }
