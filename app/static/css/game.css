@@ -118,3 +118,25 @@ button:disabled {
     /* top: 10px; */
     /* left: 30px; */
 }
+
+#levels {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+}
+
+.levels {
+    border: 1px solid white;
+    padding: 1px;
+}
+
+.level {
+    width: 10px;
+    height: 30px;
+    background: grey;
+    margin: 2px;
+}
+
+.level.shown {
+    background: white;
+}

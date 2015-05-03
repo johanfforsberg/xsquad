@@ -231,6 +231,7 @@ View = (function () {
             sprite.obj.visible =  sprite.position.z <= maxlvl;
         });
         scene.render();
+        runCallbacks("levelDisplay");
     }
 
     function makeCursor(sides, size, color) {
@@ -701,6 +702,13 @@ View = (function () {
     View.prototype.centerView = centerView;
 
     View.prototype.showPath = markPath;
+
+    View.prototype.getLevels = function () {
+        var levelKeys = R.keys(levels);
+        return {minLevel: R.min(levelKeys), maxLevel: R.max(levelKeys), maxDisplayed: levelDisplayMax};
+    }
+
+    View.prototype.setLevelDisplayMax = setLevelDisplayMax;
 
     return View;
 

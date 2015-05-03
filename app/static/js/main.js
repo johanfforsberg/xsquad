@@ -63,6 +63,7 @@ window.addEventListener("load", function () {
         // the player has hovered on a position for a little while,
         // not immediately.
         view.addCallback("hoverPosition", _.debounce(showPath, 500));
+        view.addCallback("levelDisplay", levelDisplay);
 
         view.centerView(game.team.members[0].position, false);
 
@@ -77,11 +78,14 @@ window.addEventListener("load", function () {
 
     // render the overlay "HUD"
     function renderUI () {
+        var levels = view.getLevels()
+        levels.setLevelDisplayMax = view.setLevelDisplayMax;  // cheap!
         React.render(
-            React.createElement(UI.OverlayComponent, {username: username,
-                                                      game: game, endTurn: endTurn,
-                                                      memberClicked: memberClicked,
-                                                      enemySelected: enemySelected}),
+            React.createElement(UI, {username: username,
+                                     game: game, endTurn: endTurn,
+                                     levels: levels,
+                                     memberClicked: memberClicked,
+                                     enemySelected: enemySelected}),
             document.getElementById("overlay")
         );
     }
@@ -104,6 +108,10 @@ window.addEventListener("load", function () {
     }
 
     // Callbacks for various interactions
+
+    function levelDisplay() {
+        renderUI();
+    }
 
     function showPath(pos) {
         if (game.selectedMember == undefined)
